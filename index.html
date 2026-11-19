@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Доска проектов</title>
+<title>Доска Аватюристов</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
@@ -17,7 +17,7 @@
   --bg:#ECEFF4; --surface:#FFFFFF; --surface-2:#F3F5F9; --fg:#172033; --muted:#5B677B; --line:#D3DAE5;
   --slot:#E3E8F0; --slot-line:#C6CFDD;
   --accent:#17687F; --accent-fg:#FFFFFF; --accent-soft:#DDECF1;
-  --ok:#16A34A; --bad:#E5484D;
+  --ok:#16A34A; --bad:#E5484D; --warn:#F5C518; --warn-bg:#FBE9A0; --day-ok:#B8E6C4; --day-off:#DADFE8;
   --court-off:#9AA3B2; --court-red:#D1242B; --lens-ok:#12803B;
   --block:#1B202C; --block-line:#3B4559;
   --cur-fill:#141922; --cur-stroke:#FFFFFF;
@@ -29,7 +29,7 @@
     --bg:#0F141C; --surface:#171E2A; --surface-2:#1C2433; --fg:#E7ECF4; --muted:#93A0B6; --line:#2B3648;
     --slot:#222C3C; --slot-line:#34435B;
     --accent:#4FB3D1; --accent-fg:#0B1620; --accent-soft:#183040;
-    --ok:#2FD16B; --bad:#FF6369; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
+    --ok:#2FD16B; --bad:#FF6369; --warn:#E6B800; --warn-bg:#5C4B10; --day-ok:#1E5A33; --day-off:#232B3A; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
     --block:#06080C; --block-line:#46536C;
     --cur-fill:#FFFFFF; --cur-stroke:#141922;
     --shadow:0 8px 28px rgba(0,0,0,.5);
@@ -40,7 +40,7 @@
   --bg:#0F141C; --surface:#171E2A; --surface-2:#1C2433; --fg:#E7ECF4; --muted:#93A0B6; --line:#2B3648;
   --slot:#222C3C; --slot-line:#34435B;
   --accent:#4FB3D1; --accent-fg:#0B1620; --accent-soft:#183040;
-  --ok:#2FD16B; --bad:#FF6369; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
+  --ok:#2FD16B; --bad:#FF6369; --warn:#E6B800; --warn-bg:#5C4B10; --day-ok:#1E5A33; --day-off:#232B3A; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
   --block:#06080C; --block-line:#46536C;
   --cur-fill:#FFFFFF; --cur-stroke:#141922;
   --shadow:0 8px 28px rgba(0,0,0,.5);
@@ -198,10 +198,18 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
 
 /* главная таблица */
+.mwrap.fit{width:fit-content;max-width:100%}
 .mwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
-.mt{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1721px;font-size:13px}
-.mt th{background:var(--surface-2);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 6px;border:1px solid var(--line);text-align:center}
-.mt td{border:1px solid var(--line);padding:6px 8px;vertical-align:middle}
+.mt{border-collapse:collapse;table-layout:auto;width:max-content;font-size:13px}
+.mt .ent{max-width:250px}
+.mt td.rep .ent{max-width:320px}
+.mt th{background:var(--surface-2);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 10px;border:1px solid var(--line);text-align:center}
+.mt td{border:1px solid var(--line);padding:6px 10px;vertical-align:middle;max-width:250px}
+.mt td.pl{min-width:104px;white-space:nowrap}
+.mt td.ch{min-width:84px}
+.mt td.lv{width:1%;min-width:48px}
+.mt td.rep{min-width:170px}
+.mt td.ct{min-width:136px}
 .mt th:first-child,.mt td:first-child{border-left:0}
 .mt th:last-child,.mt td:last-child{border-right:0}
 .mt thead tr:first-child th{border-top:0}
@@ -229,12 +237,12 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .ent{display:flex;align-items:center;gap:3px;margin:2px 0;min-height:30px}
 .tx{flex:1;min-width:0;overflow-wrap:anywhere}
 span.tx{padding:4px 2px}
-input.m-in{font:inherit;color:inherit;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;width:100%;min-width:0}
+input.m-in{field-sizing:fixed;font:inherit;color:inherit;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;width:100%;min-width:0}
 input.m-in:hover{border-color:var(--line)}
 input.m-in:focus{border-color:var(--accent);background:var(--surface);outline:none}
 input.m-in::placeholder{color:var(--muted);opacity:.7}
 input.m-sq{width:34px;flex:none;text-align:center;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font-weight:700;padding:4px 0}
-.m-sel{font:inherit;font-size:12px;width:100px;flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:6px;padding:4px 2px}
+.m-sel{font:inherit;font-size:12px;width:92px;flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:6px;padding:4px 2px}
 .m-b{width:22px;height:22px;flex:none;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:12px;line-height:1;cursor:pointer;padding:0}
 .m-b:hover{border-color:var(--accent);color:var(--accent)}
 .m-b.on{background:var(--court-off);border-color:var(--court-off);color:#fff}
@@ -269,10 +277,10 @@ button.ck-b:hover{background:var(--surface-2)}
 .lhead h2{font:600 13px var(--font-display);margin:0}
 .lctl{display:flex;align-items:center;gap:8px}
 .mwrap>.ck{border:0;border-radius:0}
-.lwrap{max-width:780px}
-.lt{width:100%}
+.lwrap{width:fit-content;max-width:100%}
+.lt{width:max-content}
 .lt th,.lt td{text-align:left}
-.lt td.nm{min-width:220px}
+.lt td.nm{min-width:120px}
 .lt td.nu{white-space:nowrap}
 .lt td.nu .ent{display:inline-flex}
 .lt td.pl2{white-space:nowrap}
@@ -291,12 +299,84 @@ button.ck-b:hover{background:var(--surface-2)}
   .panel{width:100%;flex:none}
 }
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---------- лут (оформление) ---------- */
+#lootBody{max-width:1100px}
+.lootwrap{margin-top:4px}
+.lt2 td.no{width:1%;text-align:center;color:var(--muted);font-weight:700}
+.lt2 td.nm{min-width:220px}
+.lt2 td.bc{text-align:center;min-width:80px;font-variant-numeric:tabular-nums}
+.lt2 td.bc.mine,.lt2 th.mine{background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.lt2 td.dark{background:var(--block);border-color:var(--block-line)}
+.lt2 td.bc.win{background:var(--day-ok);font-weight:700}
+.lt2 td.bc.tie{background:var(--warn-bg);font-weight:700}
+.lt2 td.bc.ref{color:var(--muted);text-decoration:line-through}
+.lt2 .sumrow td{background:var(--surface-2)}
+.lt2 .neg{color:var(--bad)}
+.lt2 .rdy{font-weight:800;color:var(--muted)}
+.lt2 .rdy.on{color:var(--ok)}
+.lt2 th .pdot{width:16px;height:16px;vertical-align:-3px}
+.lt2 .m-in{width:100%;min-width:200px}
+.lt2 .m-sq{width:52px;text-align:center}
+.warnmark{display:inline-block;margin-left:6px;color:#6B5200;background:var(--warn);border-radius:50%;width:18px;height:18px;line-height:18px;font-weight:800;font-size:12px;text-align:center;cursor:help}
+.lrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.lootsec{margin-top:20px}
+.lootsec h2{font-size:15px;margin:0 0 8px}
+.lcard{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:10px 14px;margin:0 0 10px;max-width:640px}
+.lch{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700}
+.ltools{display:flex;gap:6px}
+.lp{margin:6px 0 0}
+.lgl{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+.lpre{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:var(--surface-2);font:13px/1.5 var(--font-body);white-space:pre-wrap}
+/* ---------- памятки, вики, заявки ---------- */
+.memo{max-width:640px;margin:22px 0 0;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.memo h2{font-size:15px;margin:0 0 8px}
+.memo h2:not(:first-child){margin-top:16px}
+.memo ol,.memo ul{margin:0;padding-left:22px}
+.memo li{margin:4px 0}
+.wiki{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.wnav{display:flex;flex-direction:column;gap:8px;flex:0 0 220px;min-width:0}
+.wnav .wl{height:auto;min-height:36px;white-space:normal;text-decoration:none;justify-content:flex-start}
+.wmemo{margin:0;flex:1 1 380px}
+#reqBody{max-width:760px}
+.rform{display:flex;flex-direction:column;gap:8px;max-width:760px}
+.rform .m-in,.rq .m-in{border:1px solid var(--line);background:var(--surface-2);width:100%}
+.rlab{display:flex;align-items:center;gap:10px}
+.rsel{width:auto;min-width:180px;font-size:14px;padding:6px}
+.rh{font-size:15px;margin:20px 0 8px}
+.rq{max-width:760px}
+.rtext{white-space:pre-wrap}
+.rq .reply{color:var(--accent);font-weight:600}
+.rbadge{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);flex:none}
+.rbadge.accepted{color:var(--lens-ok);border-color:var(--ok)}
+.rbadge.denied{color:var(--court-red);border-color:var(--bad)}
+.rbadge.open{color:#8A6A00;border-color:var(--warn)}
+/* ---------- календарь ---------- */
+.calwrap{width:800px;max-width:100%;margin:8px auto 0}
+.cal h2{margin:0 0 10px;text-align:center;font:600 18px/1.2 var(--font-display)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.calhd{text-align:center;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:4px 0}
+.day{position:relative;aspect-ratio:1.25;min-height:64px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0;font:inherit;color:var(--fg);cursor:default;text-align:left;overflow:hidden}
+.day.can{cursor:pointer}
+.day.can:hover{border-color:var(--accent)}
+.day .dn{position:absolute;top:4px;right:7px;font-size:12px;font-weight:700;color:var(--muted)}
+.day.today .dn{color:var(--accent-fg);background:var(--accent);border-radius:9px;padding:0 6px;right:4px}
+.day .dots{position:absolute;inset:18px 4px 8px 4px;display:flex;flex-wrap:wrap;gap:3px;align-items:center;justify-content:center;align-content:center}
+.day .dots .pdot{width:22px;height:22px}
+.day .stripe{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--ok)}
+.day.yel{background:var(--warn-bg);border-color:var(--warn)}
+.day.grn{background:var(--day-ok);border-color:var(--ok)}
+.day.off{background:var(--day-off);color:var(--muted)}
+.day.off .dots{display:none}
+.day.past{background:var(--day-off);color:var(--muted);opacity:.7}
+.day.past .stripe{opacity:.5}
+.callegend{margin:10px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+@media (max-width:560px){.day .dots .pdot{width:14px;height:14px}.day .dn{font-size:10px}}
 </style>
 </head>
 <body>
 
 <div class="top">
-  <h1>Доска проектов</h1>
+  <h1>Доска Аватюристов</h1>
   <span class="pill" id="conn"><span class="dot"></span><span id="connTxt">Подключение…</span></span>
   <span class="pill" id="me" hidden></span>
   <span class="counter" id="counter"></span>
@@ -307,7 +387,11 @@ button.ck-b:hover{background:var(--surface-2)}
 
 <nav class="tabs" role="tablist" aria-label="Разделы">
   <button class="tab" type="button" role="tab" data-tab="main">Главная</button>
+  <button class="tab" type="button" role="tab" data-tab="calendar">Календарь</button>
   <button class="tab" type="button" role="tab" data-tab="tetris">Тетрис</button>
+  <button class="tab" type="button" role="tab" data-tab="loot">Лут</button>
+  <button class="tab" type="button" role="tab" data-tab="wiki">Вики</button>
+  <button class="tab" type="button" role="tab" data-tab="req">Заявки</button>
 </nav>
 
 <section id="tab-main" hidden>
@@ -320,14 +404,14 @@ button.ck-b:hover{background:var(--surface-2)}
   <div class="mbar" id="mbar" hidden>
     <button class="btn" type="button" id="editBtn"></button>
   </div>
-  <div class="mwrap"><table class="mt" id="mt"></table></div>
+  <div class="mwrap fit"><table class="mt" id="mt"></table></div>
   <section class="chk" id="chk" hidden>
     <h2>Обработка цикла</h2>
     <div class="mwrap"><table class="ck" id="ck"></table></div>
   </section>
   <section class="lenses" id="lenses">
     <div class="lhead"><h2>Линзы</h2><span class="lctl" id="lctl"></span></div>
-    <div class="mwrap lwrap"><table class="ck lt" id="lt"></table></div>
+    <div class="mwrap fit lwrap"><table class="ck lt" id="lt"></table></div>
   </section>
   <p class="legend">
     <span class="lg"><b>Дворы:</b> обычный</span>
@@ -338,6 +422,61 @@ button.ck-b:hover{background:var(--surface-2)}
     <span class="lg hotc">дошла до нуля</span>
   </p>
   <p class="hint" id="mhint"></p>
+</section>
+
+<section id="tab-calendar" hidden>
+  <div class="calwrap cal">
+    <h2 id="calTitle"></h2>
+    <div class="calgrid" id="calGrid"></div>
+    <p class="callegend" id="calLegend"></p>
+  </div>
+</section>
+
+<section id="tab-loot" hidden>
+  <div id="lootBody"></div>
+  <aside class="memo" id="lootMemo">
+    <h2>Конец сессии, ребята! Вместе с лутом пишите мне:</h2>
+    <ol>
+      <li>Выполнили двор? Предметы? Закрыли драйв-квест?</li>
+      <li>Закажите квест по драйву, если надо!</li>
+      <li>Обработайте ОТ и получите травмы.</li>
+      <li>ПОЛУЧИТЕ ЛУТ!</li>
+    </ol>
+  </aside>
+</section>
+
+<section id="tab-wiki" hidden>
+  <div class="wiki">
+    <nav class="wnav" id="wikiNav" aria-label="Ссылки"></nav>
+    <article class="memo wmemo">
+      <h2>Короткий отдых</h2>
+      <ul>
+        <li>Восстановить 1 БП, 1 раз — бесплатно</li>
+        <li>Восстановить 2+ЛВЛ хитов, 1 раз — бесплатно, остальные разы — 1 БП</li>
+        <li>Восстановить заряды дневных/сессию способностей — 2 БП</li>
+        <li>Восстановить весь дух — 2 БП</li>
+        <li>Восстановить 1 стат — 1 БП</li>
+        <li>Снять 1 боль — 1 БП</li>
+        <li>Восстановить ману по регену — бесплатно 1 раз, далее 1 БП</li>
+        <li>Восстановить божественные касты (с шансом от двора) — 1 БП</li>
+      </ul>
+      <h2>Полный отдых</h2>
+      <ul>
+        <li>Восстановить все хиты</li>
+        <li>Восстановить все БП</li>
+        <li>Восстановить всю боль</li>
+        <li>Восстановить все заряды способностей</li>
+        <li>Восстановить все заклинания и ману</li>
+        <li>Восстановить все характеристики</li>
+        <li>Восстановить весь дух</li>
+        <li>Восстановить все статы</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section id="tab-req" hidden>
+  <div id="reqBody"></div>
 </section>
 
 <section id="tab-tetris" hidden>
@@ -422,7 +561,8 @@ let state={chars:[],blocks:{},projects:[]};   // доска (общая для �
 let presence={};                              // курсоры
 let colorsTaken={};                           // занятые цвета
 let loaded=false, online=false, pending=false, selected=null;
-let tab='main';                               // вкладка: 'main' или 'tetris'
+const TABS=['main','calendar','tetris','loot','wiki','req'];
+let tab='main';                               // вкладка: 'main', 'calendar' или 'tetris'
 const TIERS=5;
 const cellMap=new Map();
 
@@ -713,6 +853,10 @@ function busy(){return !!((drag&&drag.active)||(rdrag&&rdrag.active));}
 function render(){
   pending=false;
   if(tab==='tetris'){renderBoard();renderPanel();renderCursors();}
+  else if(tab==='calendar') renderCal();
+  else if(tab==='loot') renderLootSafe();
+  else if(tab==='req') renderReqSafe();
+  else if(tab==='wiki') renderWiki();
   else renderMainSafe();
   renderTop();
 }
@@ -1428,7 +1572,7 @@ function parseCycle(m){
 }
 const IMG_RE=/^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/;
 let mainData=parseMain(null), cyc=parseCycle(null);
-const CHECKS=['Спишите линзу на 1, если она не росла','Расход и доход денег','Обработайте ОТ и заживление травм','Обработайте Активацию постоянных бонусов/базы','Получите внимание'];
+const CHECKS=['Спишите линзу на 1, если она не росла','Расход и доход денег','Обработайте ОТ и заживление травм','Обработайте Активацию постоянных бонусов/базы','Получите внимание','Поставили расписание?'];
 let mainPending=false, ptrDown=false, focusNext=null, editMode=false, lensTarget='blue';
 
 const canEdit=k=>!!(db&&me.role&&(isMaster()||me.color===k));
@@ -1569,8 +1713,8 @@ function confirmBtn(b,fn){
 }
 const enterBlur=e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur();}};
 function mText(s,cls){const n=el('span','tx'+(cls?' '+cls:''));n.textContent=s;return n;}
-function mInput(val,ph,commit,fid){
-  const i=el('input','m-in tx'); i.type='text'; i.value=val; i.title=val; i.placeholder=ph; i.maxLength=60; i.autocomplete='off';
+function mInput(val,ph,commit,fid,size){
+  const i=el('input','m-in tx'); i.type='text'; i.size=size||10; i.value=val; i.title=val; i.placeholder=ph; i.maxLength=60; i.autocomplete='off';
   if(fid) i.dataset.fid=fid;
   i.addEventListener('change',()=>commit(i.value));
   i.addEventListener('keydown',enterBlur);
@@ -1618,7 +1762,7 @@ function charRow(pc,d,ch,idx,n){
   dot.title=pc.n+(colorsTaken[k]?'':' (цвет не занят)');
   makeDotEditable(dot,k);
   wrap.appendChild(dot);
-  wrap.appendChild(ed?mInput(d.nick,'Ник',v=>mset(k,'nick',v)):mText(d.nick));
+  wrap.appendChild(ed?mInput(d.nick,'Ник',v=>mset(k,'nick',v),undefined,8):mText(d.nick));
   td.appendChild(wrap);
   if(isMaster()&&editMode){
     const cb=mBtn('Очистить','wide','Очистить всю строку',()=>confirmBtn(cb,()=>clearRow(k)));
@@ -1634,7 +1778,7 @@ function charRow(pc,d,ch,idx,n){
   td=el('td','ch');
   if(ed){
     const w=el('div','ent');
-    w.appendChild(mInput(ch.ch,idx?'Персонаж '+(idx+1):'Персонаж',v=>mset(k,ch.base+'ch',v),ch.id||undefined));
+    w.appendChild(mInput(ch.ch,idx?'Персонаж '+(idx+1):'Персонаж',v=>mset(k,ch.base+'ch',v),ch.id||undefined,8));
     if(ch.id){const xb=mBtn('×','','Удалить персонажа',()=>confirmBtn(xb,()=>delChar(k,ch)));w.appendChild(xb);}
     td.appendChild(w);
   }else td.appendChild(mText(ch.ch));
@@ -1652,7 +1796,7 @@ function charRow(pc,d,ch,idx,n){
     const risk=!!(cur&&s.p!==null&&cur.c.l!==null&&cur.c.l>0&&s.p<=cur.c.l);
     const mkRisk=()=>{const r=el('span','risk');r.textContent='!';r.dataset.tip='РИСК ПОТЕРИ ИСТОРИИ!';r.setAttribute('aria-label','РИСК ПОТЕРИ ИСТОРИИ!');attachTip(r,'РИСК ПОТЕРИ ИСТОРИИ!');return r;};
     if(ed){
-      row.appendChild(mInput(s.n,'История',v=>mset(k,ch.base+'stories/'+s.id+'/n',v),s.id));
+      row.appendChild(mInput(s.n,'История',v=>mset(k,ch.base+'stories/'+s.id+'/n',v),s.id,9));
       row.appendChild(mNum(s.p,'0',v=>mset(k,ch.base+'stories/'+s.id+'/p',v)));
       if(risk) row.appendChild(mkRisk());
       const sel=el('select','m-sel'); sel.setAttribute('aria-label','Связанный двор');
@@ -1686,7 +1830,7 @@ function charRow(pc,d,ch,idx,n){
       const row=el('div',cls);
       if(ed){
         const base=ch.base+'courts/t'+t+'/'+c.id;
-        row.appendChild(mInput(c.n,'Двор',v=>mset(k,base+'/n',v),c.id));
+        row.appendChild(mInput(c.n,'Двор',v=>mset(k,base+'/n',v),c.id,7));
         row.appendChild(mNum(c.l,'0',v=>mset(k,base+'/l',v)));
         row.appendChild(mBtn('О',c.off?'on':'',c.off?'Включить двор':'Отключить двор',()=>mset(k,base+'/off',c.off?null:true)));
         const xb=mBtn('×','','Удалить двор',()=>confirmBtn(xb,()=>delCourt(k,ch,t,c.id)));
@@ -1844,7 +1988,7 @@ function renderLenses(){
     }else td.appendChild(mText(charName(dd,lc)));
     tr.appendChild(td);
     td=el('td','nm');
-    td.appendChild(ed?mInput(l.n,'Название линзы',v=>mset(k,'lenses/'+l.id+'/n',v),l.id):mText(l.n));
+    td.appendChild(ed?mInput(l.n,'Название линзы',v=>mset(k,'lenses/'+l.id+'/n',v),l.id,14):mText(l.n));
     tr.appendChild(td);
     td=el('td','nu'); const nu=el('div','ent');
     if(ed){
@@ -1878,9 +2022,7 @@ $('#editBtn').addEventListener('click',()=>{
 function renderMain(){
   mainPending=false; hideTip();
   const tbl=$('#mt');
-  tbl.innerHTML='<colgroup><col style="width:140px"><col style="width:120px"><col style="width:56px"><col style="width:330px">'
-    +Array.from({length:TIERS},()=>'<col style="width:215px">').join('')+'</colgroup>'
-    +'<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th></tr><tr>'
+  tbl.innerHTML='<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th></tr><tr>'
     +Array.from({length:TIERS},(_,i)=>'<th>T'+(i+1)+'</th>').join('')+'</tr></thead>';
   const tb=el('tbody');
   const vis=visibleColors();
@@ -1910,10 +2052,501 @@ document.addEventListener('pointercancel',()=>{ptrDown=false;flushMain();},true)
 window.addEventListener('blur',()=>{ptrDown=false;});
 $('#tab-main').addEventListener('focusout',flushMain);
 
+/* ---------- лут: board/main/loot ---------- */
+const LP='board/main/loot', BEATS={r:'s',s:'p',p:'r'}, RPS_N={r:'Камень',s:'Ножницы',p:'Бумага'}, RPS_I={r:'✊',s:'✌️',p:'✋'};
+const objOf=a=>{const o={};a.forEach(k=>{o[k]=1;});return o;};
+const pcFlags=o=>{const x={};PCOLORS.forEach(pc=>{if(o&&o[pc.k]) x[pc.k]=1;});return x;};
+function parseLoot(m){
+  const L=(m&&m.loot&&typeof m.loot==='object')?m.loot:{};
+  const bid={},ref={},rps={},ex={};
+  PCOLORS.forEach(pc=>{
+    const b=(L.bid&&L.bid[pc.k])||{}; bid[pc.k]={};
+    Object.keys(b).forEach(id=>{const n=numOrNull(b[id]); if(n!==null&&n>0) bid[pc.k][id]=Math.floor(n);});
+    const n=numOrNull(L.x&&L.x[pc.k]); if(n!==null&&n>0) ex[pc.k]=Math.floor(n);
+  });
+  Object.keys(L.ref||{}).forEach(id=>{ref[id]=pcFlags(L.ref[id]);});
+  Object.keys(L.rps||{}).forEach(id=>{
+    const r=L.rps[id]||{}, ks=o=>PCOLORS.map(p=>p.k).filter(k=>o&&o[k]);
+    const pk={}; Object.keys(r.pk||{}).forEach(rd=>{pk[rd]={}; PCOLORS.forEach(pc=>{const v=r.pk[rd]&&r.pk[rd][pc.k]; if(v==='r'||v==='s'||v==='p') pk[rd][pc.k]=v;});});
+    rps[id]={st:String(r.st||''),by:String(r.by||''),par:ks(r.par),acc:ks(r.acc),rd:numOrNull(r.rd)||1,al:ks(r.al),bye:String(r.bye||''),win:String(r.win||''),
+      wn:pcFlags(r.wn),ls:pcFlags(r.ls),pk,lg:Object.entries(r.lg||{}).map(([i,e])=>Object.assign({id:i},e||{})).sort(byId)};
+  });
+  return{open:!!L.open,rev:!!L.rev,items:Object.entries(L.items||{}).map(([id,i])=>({id,n:String((i&&i.n)||'')})).sort(byId),
+    out:pcFlags(L.out),rdy:pcFlags(L.rdy),x:ex,bid,ref,rps};
+}
+let loot=parseLoot(null), lootEdit=false, lootPending=false; const lootShow={}, rpsSig={};
+const lootMembers=()=>PCOLORS.filter(pc=>hasData(pc.k)&&!loot.out[pc.k]).map(pc=>pc.k);
+const nickOf=k=>(mainData[k]&&mainData[k].nick)||PCK[k].n;
+const lootBudget=k=>3*loot.items.length+(loot.x[k]||0);
+const lootSpent=k=>loot.items.reduce((s,it)=>s+(loot.bid[k][it.id]||0),0);
+const lootLeft=k=>lootBudget(k)-lootSpent(k);
+function itemStatus(it,M){
+  const bids=M.filter(k=>loot.bid[k][it.id]>0);
+  if(!bids.length) return{st:'none',eff:[],T:[],top:0};
+  const top=Math.max(...bids.map(k=>loot.bid[k][it.id]));
+  const T=bids.filter(k=>loot.bid[k][it.id]===top), rf=loot.ref[it.id]||{};
+  let eff=T.filter(k=>!rf[k]); if(!eff.length) eff=T;
+  const g=loot.rps[it.id];
+  if(eff.length>1&&g&&g.st==='done'&&eff.includes(g.win)) eff=[g.win];
+  return{st:eff.length>1?'tie':'win',eff,T,top};
+}
+/* действия */
+function lootAddItem(){if(!isMaster()||!db) return; const key=R(LP+'/items').push().key; focusNext=key; R(LP+'/items/'+key).set({n:''});}
+function lootDelItem(id){
+  if(!isMaster()||!db) return;
+  const u={}; u['items/'+id]=null; u['ref/'+id]=null; u['rps/'+id]=null;
+  PCOLORS.forEach(pc=>{u['bid/'+pc.k+'/'+id]=null;});
+  R(LP).update(u);
+}
+function lootRename(id,v){if(isMaster()&&db) R(LP+'/items/'+id+'/n').set(v.trim());}
+function lootClear(){if(isMaster()&&db){lootEdit=false;R(LP).remove();}}
+function lootGo(){
+  if(!isMaster()||!db) return;
+  if(!loot.items.length){toast('Добавьте хотя бы одну позицию');return;}
+  R(LP+'/open').set(1);
+}
+function lootForce(){if(isMaster()&&db) R(LP+'/rev').set(1);}
+function lootOut(k,on){
+  if(!isMaster()||!db) return;
+  const u={}; u['out/'+k]=on?1:null;
+  if(on){
+    u['rdy/'+k]=null;
+    Object.keys(loot.ref).forEach(id=>{u['ref/'+id+'/'+k]=null;});
+    Object.keys(loot.rps).forEach(id=>{if(loot.rps[id].par.includes(k)) u['rps/'+id]=null;});
+  }
+  R(LP).update(u);
+}
+function lootExtra(k,txt){
+  if(!isMaster()||!db) return;
+  const n=Math.floor(+String(txt).trim()||0);
+  R(LP+'/x/'+k).set(n>0?n:null);
+}
+function lootBid(k,id,txt){
+  if(me.color!==k||!db||loot.rdy[k]||loot.rev) return;
+  const t=String(txt).trim(), cur=loot.bid[k][id]||0, path=LP+'/bid/'+k+'/'+id;
+  if(t===''||+t===0){R(path).set(null);return;}
+  const n=Math.floor(+t);
+  if(!Number.isFinite(n)||n<0){toast('Введите число');renderLoot();return;}
+  if(n<2){toast('Минимум 2 очка на позицию');renderLoot();return;}
+  const left=lootLeft(k)+cur;
+  if(n>left){toast('Не хватает очков: на эту позицию можно не больше '+left);renderLoot();return;}
+  R(path).set(n);
+}
+function lootReady(k,on){
+  if(me.color!==k||!db||loot.rev) return;
+  if(on&&lootLeft(k)<0){toast('Потрачено больше очков, чем есть');return;}
+  R(LP+'/rdy/'+k).set(on?1:null);
+}
+function lootAuto(){
+  if(!db||!me.role||!loot.open||loot.rev) return;
+  const M=lootMembers(); if(M.length&&M.every(k=>loot.rdy[k])) R(LP+'/rev').set(1);
+}
+/* камень-ножницы-бумага */
+function rpsPropose(id){
+  const it=loot.items.find(x=>x.id===id), M=lootMembers(); if(!it||!db) return;
+  const s=itemStatus(it,M), g=loot.rps[id];
+  if(s.st!=='tie'||!s.eff.includes(me.color)||(g&&g.st!=='done')) return;
+  R(LP+'/rps/'+id).set({st:'ask',by:me.color,par:objOf(s.eff),acc:objOf([me.color])});
+}
+function rpsAccept(id){
+  const g=loot.rps[id]; if(!db||!g||g.st!=='ask'||!g.par.includes(me.color)||g.acc.includes(me.color)) return;
+  if(g.acc.length+1<g.par.length){R(LP+'/rps/'+id+'/acc/'+me.color).set(1);return;}
+  R(LP+'/rps/'+id).update({st:'play',rd:1,al:objOf(g.par),bye:g.par.length%2?g.par[Math.floor(Math.random()*g.par.length)]:null,wn:null,ls:null,pk:null,['acc/'+me.color]:1});
+}
+function rpsDecline(id){const g=loot.rps[id]; if(db&&g&&g.st==='ask'&&g.par.includes(me.color)) R(LP+'/rps/'+id).remove();}
+function rpsPick(id,c){
+  const g=loot.rps[id]; if(!db||!g||g.st!=='play'||!g.al.includes(me.color)) return;
+  if(((g.pk['r'+g.rd]||{})[me.color])) return;
+  R(LP+'/rps/'+id+'/pk/r'+g.rd+'/'+me.color).set(c);
+}
+function lootRefuse(id){
+  const it=loot.items.find(x=>x.id===id); if(!it||!db) return;
+  const s=itemStatus(it,lootMembers()), g=loot.rps[id];
+  if(s.st!=='tie'||!s.eff.includes(me.color)||(g&&g.st!=='done')) return;
+  R(LP+'/ref/'+id+'/'+me.color).set(1);
+}
+// каждый раунд обрабатывает один клиент: первый из оставшихся в игре
+function rpsTick(){
+  if(!db||!me.role) return;
+  Object.keys(loot.rps).forEach(id=>{
+    const g=loot.rps[id]; if(g.st!=='play'||g.al[0]!==me.color) return;
+    const pk=g.pk['r'+g.rd]||{}, sig=JSON.stringify([g.st,g.rd,pk,g.wn,g.ls]);
+    if(rpsSig[id]===sig) return; rpsSig[id]=sig;
+    const rest=g.al.filter(k=>k!==g.bye), u={}, wn=Object.assign({},g.wn), ls=Object.assign({},g.ls), lg=R(LP+'/rps/'+id+'/lg');
+    let did=false;
+    for(let i=0;i<rest.length;i+=2){
+      const a=rest[i], b=rest[i+1];
+      if(wn[a]||ls[a]||wn[b]||ls[b]||!pk[a]||!pk[b]) continue;
+      const res=pk[a]===pk[b]?'d':(BEATS[pk[a]]===pk[b]?'a':'b');
+      u['lg/'+lg.push().key]={rd:g.rd,a,pa:pk[a],b,pb:pk[b],r:res}; did=true;
+      if(res==='d'){u['pk/r'+g.rd+'/'+a]=null;u['pk/r'+g.rd+'/'+b]=null;}
+      else{const w=res==='a'?a:b, l=res==='a'?b:a; wn[w]=1;ls[l]=1;u['wn/'+w]=1;u['ls/'+l]=1;}
+    }
+    if(rest.every(k=>wn[k]||ls[k])&&(!g.bye||pk[g.bye])){
+      const nxt=PCOLORS.map(p=>p.k).filter(k=>wn[k]||k===g.bye);
+      Object.keys(u).forEach(x=>{if(/^(wn|ls)\//.test(x)) delete u[x];});
+      if(g.bye) u['lg/'+lg.push().key]={rd:g.rd,a:g.bye,pa:pk[g.bye],bye:1};
+      if(nxt.length<=1){u.st='done';u.win=nxt[0]||'';}
+      else{u.rd=g.rd+1;u.al=objOf(nxt);u.bye=nxt.length%2?nxt[Math.floor(Math.random()*nxt.length)]:null;u.wn=null;u.ls=null;}
+      did=true;
+    }
+    if(did) R(LP+'/rps/'+id).update(u);
+  });
+}
+function copyText(t){
+  const done=()=>toast('Скопировано');
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){toast('Не удалось скопировать');}ta.remove();};
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done,fb); else fb();
+}
+/* отрисовка */
+const lbtn=(txt,cls,fn)=>{const b=el('button','btn'+(cls?' '+cls:''));b.type='button';b.textContent=txt;b.addEventListener('click',()=>fn(b));return b;};
+function rpsLine(g,e){
+  const nm=k=>nickOf(k);
+  if(isMaster()){
+    if(e.bye) return 'Раунд '+e.rd+': '+nm(e.a)+' ('+RPS_N[e.pa]+') — автопроход';
+    return 'Раунд '+e.rd+': '+nm(e.a)+' ('+RPS_N[e.pa]+') — '+nm(e.b)+' ('+RPS_N[e.pb]+'): '+(e.r==='d'?'ничья':'победил '+nm(e.r==='a'?e.a:e.b));
+  }
+  if(e.a===me.color){
+    if(e.bye) return 'Раунд '+e.rd+': вы бросили '+RPS_N[e.pa]+'. Вы победили!';
+    return 'Раунд '+e.rd+': вы — '+RPS_N[e.pa]+', '+nm(e.b)+' — '+RPS_N[e.pb]+'. '+(e.r==='d'?'Ничья, бросайте снова.':e.r==='a'?'Вы победили!':'Вы проиграли.');
+  }
+  if(e.b===me.color) return 'Раунд '+e.rd+': вы — '+RPS_N[e.pb]+', '+nm(e.a)+' — '+RPS_N[e.pa]+'. '+(e.r==='d'?'Ничья, бросайте снова.':e.r==='b'?'Вы победили!':'Вы проиграли.');
+  return '';
+}
+function tieCard(it,idx,s){
+  const g=loot.rps[it.id], card=el('div','lcard');
+  const h=el('div','lch'); h.textContent='Позиция '+(idx+1)+' «'+(it.n||'без названия')+'»'; card.appendChild(h);
+  const who=s.eff.map(nickOf).join(', ');
+  const mine=s.eff.includes(me.color);
+  if(g&&g.st==='ask'){
+    card.appendChild(elt('p','lp','Предложена игра в камень-ножницы-бумагу. Ставки по '+s.top+' очк.: '+g.par.map(nickOf).join(', ')+'. Согласились: '+g.acc.map(nickOf).join(', ')+'.'));
+    if(g.par.includes(me.color)&&!g.acc.includes(me.color)){
+      const r=el('div','lrow'); r.appendChild(lbtn('Принять','primary',()=>rpsAccept(it.id))); r.appendChild(lbtn('Отказаться от игры','',()=>rpsDecline(it.id))); card.appendChild(r);
+    }else if(mine) card.appendChild(elt('p','lp muted','Ждём остальных.'));
+  }else if(g&&g.st==='play'){
+    card.appendChild(elt('p','lp','Игра идёт: '+g.par.map(nickOf).join(', ')+'. Раунд '+g.rd+'.'));
+    const pk=g.pk['r'+g.rd]||{};
+    if(g.al.includes(me.color)){
+      if(!pk[me.color]){
+        const r=el('div','lrow'); ['r','s','p'].forEach(c=>r.appendChild(lbtn(RPS_I[c]+' '+RPS_N[c],'',()=>rpsPick(it.id,c)))); card.appendChild(r);
+      }else card.appendChild(elt('p','lp muted','Бросок сделан. Ждём остальных.'));
+    }else if(g.par.includes(me.color)) card.appendChild(elt('p','lp muted','Вы выбыли из игры.'));
+    if(isMaster()) card.appendChild(elt('p','lp muted','Бросили в этом раунде: '+(Object.keys(pk).map(nickOf).join(', ')||'никто')));
+  }else{
+    card.appendChild(elt('p','lp','Одинаковые ставки по '+s.top+' очк.: '+who+'.'));
+    if(mine){
+      const r=el('div','lrow'); r.appendChild(lbtn('Сыграть в камень-ножницы-бумагу','primary',()=>rpsPropose(it.id)));
+      r.appendChild(lbtn('Отказаться от предмета','',()=>lootRefuse(it.id))); card.appendChild(r);
+    }
+  }
+  if(g){const lines=g.lg.map(e=>rpsLine(g,e)).filter(Boolean); if(lines.length){const ul=el('ul','lgl'); lines.forEach(t=>ul.appendChild(elt('li','',t))); card.appendChild(ul);}}
+  return card;
+}
+function listBlock(k,M){
+  const box=el('div','lcard llist'), head=el('div','lch');
+  head.appendChild(elt('span','',isMaster()?'Лут: '+nickOf(k):'Ваш лут'));
+  const lines=[]; let pend=false;
+  loot.items.forEach((it,i)=>{const s=itemStatus(it,M); if(s.st==='tie'&&s.eff.includes(k)) pend=true; else if(s.st==='win'&&s.eff[0]===k) lines.push((i+1)+'. '+(it.n||'(без названия)'));});
+  const tools=el('span','ltools');
+  if(!pend||isMaster()) tools.appendChild(lbtn(lootShow[k]?'Скрыть':'Показать','',()=>{lootShow[k]=!lootShow[k];renderLoot();}));
+  if(!pend||isMaster()) tools.appendChild(lbtn('Копировать','',()=>copyText(lines.join('\n'))));
+  head.appendChild(tools); box.appendChild(head);
+  if(pend) box.appendChild(elt('p','lp muted',isMaster()?'Есть нерешённые спорные позиции — список неполный.':'Есть спорные позиции. Список появится, когда они будут решены.'));
+  if((!pend||isMaster())&&lootShow[k]){
+    if(!lines.length) box.appendChild(elt('p','lp muted','Пока ничего не досталось.'));
+    else{const pre=el('pre','lpre'); pre.textContent=lines.join('\n'); box.appendChild(pre);}
+  }
+  return box;
+}
+function renderLoot(){
+  lootPending=false; hideTip();
+  const root=$('#lootBody'); if(!root) return; root.innerHTML='';
+  const master=isMaster(), M=lootMembers(), editing=master&&(lootEdit||!loot.open);
+  if(!loot.open&&!master){root.appendChild(elt('p','hint','Мастер ещё готовит лут. Когда он будет готов, позиции появятся здесь.'));return;}
+  if(!me.role){root.appendChild(elt('p','hint','Войдите, чтобы увидеть лут.'));return;}
+  if(master){
+    const bar=el('div','adminbar');
+    bar.appendChild(elt('span','lbl','Мастер'));
+    if(!loot.open) bar.appendChild(lbtn('Лут готов','primary',lootGo));
+    else{
+      bar.appendChild(lbtn(lootEdit?'Готово':'Редактировать','',()=>{lootEdit=!lootEdit;focusNext=null;renderLoot();}));
+      if(!loot.rev) bar.appendChild(lbtn('Вскрыть сейчас','',b=>arm(b,lootForce)));
+    }
+    bar.appendChild(lbtn('Очистить лут','',b=>arm(b,lootClear)));
+    const st=el('span','pill'); st.textContent=!loot.open?'Лут ещё не открыт игрокам':(loot.rev?'Лут вскрыт':'Готовы '+M.filter(k=>loot.rdy[k]).length+' из '+M.length);
+    bar.appendChild(st); root.appendChild(bar);
+  }
+  const own=(me.role==='player'&&M.includes(me.color))?me.color:null;
+  if(loot.open&&me.role==='player'&&!own) root.appendChild(elt('p','hint','Вы не участвуете в этом луте: заполните персонажа на вкладке «Главная» или попросите мастера вернуть вас.'));
+  const wrap=el('div','mwrap fit lootwrap'), t=el('table','mt lt2'); wrap.appendChild(t);
+  const hr=el('tr'); hr.appendChild(elt('th','','№')); hr.appendChild(elt('th','','Позиция'));
+  if(loot.open) M.forEach(k=>{
+    const th=el('th',k===own?'mine':''); th.appendChild(dotEl(k)); th.appendChild(document.createTextNode(' '+nickOf(k)+' '));
+    const ck=el('span','rdy'+(loot.rdy[k]?' on':'')); ck.textContent=loot.rdy[k]?'✓':'…'; ck.title=loot.rdy[k]?'Готов':'Ещё не готов'; th.appendChild(ck);
+    if(editing){const x=el('button','m-b x'); x.type='button'; x.textContent='×'; x.title='Убрать игрока из лута'; x.addEventListener('click',()=>lootOut(k,true)); th.appendChild(x);}
+    hr.appendChild(th);
+  });
+  if(editing) hr.appendChild(el('th'));
+  const thead=el('thead'); thead.appendChild(hr); t.appendChild(thead);
+  const tb=el('tbody'); t.appendChild(tb);
+  const see=k=>loot.rev||master||k===own;
+  loot.items.forEach((it,i)=>{
+    const tr=el('tr'), s=loot.open?itemStatus(it,M):null;
+    tr.appendChild(elt('td','no',String(i+1)));
+    const nm=el('td','nm');
+    if(editing){const inp=el('input','m-in'); inp.type='text'; inp.value=it.n; inp.placeholder='Название предмета'; inp.dataset.fid=it.id; inp.size=28; inp.addEventListener('change',()=>lootRename(it.id,inp.value)); nm.appendChild(inp);}
+    else nm.textContent=it.n||'—';
+    tr.appendChild(nm);
+    if(loot.open) M.forEach(k=>{
+      const td=el('td','bc'+(k===own?' mine':''));
+      if(!see(k)){td.classList.add('dark');tr.appendChild(td);return;}
+      const v=loot.bid[k][it.id]||0;
+      if(k===own&&!loot.rdy[k]&&!loot.rev){
+        const inp=el('input','m-sq'); inp.type='text'; inp.inputMode='numeric'; inp.value=v||''; inp.size=3; inp.setAttribute('aria-label','Очки на позицию '+(i+1));
+        inp.addEventListener('change',()=>lootBid(k,it.id,inp.value)); td.appendChild(inp);
+      }else td.textContent=v||'';
+      if(loot.rev&&v){
+        if((loot.ref[it.id]||{})[k]) td.classList.add('ref');
+        else if(s.eff.includes(k)) td.classList.add(s.eff.length>1?'tie':'win');
+      }
+      tr.appendChild(td);
+    });
+    if(editing){const td=el('td'); const x=el('button','m-b x'); x.type='button'; x.textContent='×'; x.title='Удалить позицию'; x.addEventListener('click',()=>lootDelItem(it.id)); td.appendChild(x); tr.appendChild(td);}
+    tb.appendChild(tr);
+  });
+  if(loot.open&&M.length){
+    const showX=editing||M.some(k=>loot.x[k]&&see(k));
+    if(showX){
+      const tr=el('tr','sumrow'); tr.appendChild(el('td')); tr.appendChild(elt('td','nm','Дополнительные очки'));
+      M.forEach(k=>{
+        const td=el('td','bc'+(k===own?' mine':'')); if(!see(k)) td.classList.add('dark');
+        else if(editing){const inp=el('input','m-sq'); inp.type='text'; inp.inputMode='numeric'; inp.size=3; inp.value=loot.x[k]||''; inp.addEventListener('change',()=>lootExtra(k,inp.value)); td.appendChild(inp);}
+        else td.textContent=loot.x[k]||'';
+        tr.appendChild(td);
+      });
+      if(editing) tr.appendChild(el('td')); tb.appendChild(tr);
+    }
+    const tr=el('tr','sumrow'); tr.appendChild(el('td')); tr.appendChild(elt('td','nm','Осталось очков'));
+    M.forEach(k=>{
+      const td=el('td','bc'+(k===own?' mine':'')); if(!see(k)){td.classList.add('dark');tr.appendChild(td);return;}
+      const left=lootLeft(k); const b=el('b',left<0?'neg':''); b.textContent=left+' из '+lootBudget(k); td.appendChild(b);
+      if(left>0&&!loot.rev&&(k===own||master)){const w=el('span','warnmark'); w.textContent='!'; w.setAttribute('aria-label','Вы не потратили очки!'); attachTip(w,k===own?'Вы не потратили очки!':nickOf(k)+' не потратил очки!'); td.appendChild(w);}
+      tr.appendChild(td);
+    });
+    if(editing) tr.appendChild(el('td')); tb.appendChild(tr);
+    if(own&&!loot.rev){
+      const r2=el('tr','sumrow'); r2.appendChild(el('td')); r2.appendChild(elt('td','nm',''));
+      M.forEach(k=>{
+        const td=el('td','bc'+(k===own?' mine':'')); if(k===own){const on=!!loot.rdy[k]; td.appendChild(lbtn(on?'Отменить готовность':'Готов',on?'':'primary',()=>lootReady(k,!on)));} else td.classList.add('dark');
+        r2.appendChild(td);
+      });
+      tb.appendChild(r2);
+    }
+  }
+  root.appendChild(wrap);
+  if(editing){
+    const r=el('div','lrow'); r.appendChild(lbtn('+ Позиция','',lootAddItem)); root.appendChild(r);
+    const outs=PCOLORS.filter(pc=>hasData(pc.k)&&loot.out[pc.k]);
+    if(outs.length&&loot.open){const o=el('div','lrow'); o.appendChild(elt('span','muted','Убраны из лута:')); outs.forEach(pc=>{const b=lbtn(nickOf(pc.k)+' — вернуть','',()=>lootOut(pc.k,false)); o.appendChild(b);}); root.appendChild(o);}
+  }
+  if(loot.open&&!loot.rev&&own) root.appendChild(elt('p','hint','Минимум 2 очка на позицию (или ничего). Остальные игроки не видят, сколько и куда вы поставили. Когда все нажмут «Готов», ставки вскроются.'));
+  if(loot.rev){
+    const ties=[]; loot.items.forEach((it,i)=>{const s=itemStatus(it,M); const g=loot.rps[it.id]; if(s.st==='tie'||(g&&g.st!=='done')) ties.push([it,i,s]);});
+    if(ties.length){const sec=el('section','lootsec'); sec.appendChild(elt('h2','','Спорные позиции')); ties.forEach(([it,i,s])=>sec.appendChild(tieCard(it,i,s.st==='tie'?s:Object.assign({},s,{eff:s.eff})))); root.appendChild(sec);}
+    const sec=el('section','lootsec'); if(master) sec.appendChild(elt('h2','','Лут игроков'));
+    if(master) M.forEach(k=>sec.appendChild(listBlock(k,M))); else if(own) sec.appendChild(listBlock(own,M));
+    root.appendChild(sec);
+  }
+  if(focusNext){const n=root.querySelector('[data-fid="'+focusNext+'"]'); focusNext=null; if(n) n.focus();}
+}
+function renderLootSafe(){
+  const a=document.activeElement;
+  const typing=a&&a.closest&&a.closest('#tab-loot')&&(a.tagName==='INPUT'||a.tagName==='SELECT'||a.tagName==='TEXTAREA');
+  if(typing||ptrDown){lootPending=true;return;}
+  renderLoot();
+}
+$('#tab-loot').addEventListener('focusout',()=>setTimeout(()=>{if(lootPending&&tab==='loot') renderLootSafe();},0));
+document.addEventListener('pointerup',()=>setTimeout(()=>{if(lootPending&&tab==='loot') renderLootSafe();},0),true);
+
+/* ---------- вики ---------- */
+// ссылки левого меню: {t:'Название кнопки',u:'https://адрес'}
+const WIKI_LINKS=[];
+function renderWiki(){
+  const nav=$('#wikiNav'); if(!nav) return; nav.innerHTML='';
+  if(!WIKI_LINKS.length){nav.appendChild(elt('p','muted','Ссылки пока не добавлены.'));return;}
+  WIKI_LINKS.forEach(l=>{const a=el('a','btn wl'); a.textContent=l.t; a.href=l.u; a.target='_blank'; a.rel='noopener noreferrer'; nav.appendChild(a);});
+}
+/* ---------- заявки: board/main/req/{id} ---------- */
+const RP='board/main/req', REQ_ST={open:'На рассмотрении',accepted:'Принято',denied:'Отказано',closed:'Закрыта'};
+function parseReq(m){
+  return Object.entries((m&&m.req&&typeof m.req==='object')?m.req:{}).map(([id,r])=>{
+    r=r||{};
+    return{id,k:PCK[r.k]?r.k:'',ch:String(r.ch||'').slice(0,80),t:String(r.t||'').slice(0,160),d:String(r.d||'').slice(0,3000),
+      st:REQ_ST[r.st]?r.st:'open',a:String(r.a||'').slice(0,1500),ts:numOrNull(r.ts)||0};
+  }).filter(r=>r.k).sort(byId);
+}
+let reqs=[], reqPending=false; const reqDraft={ch:'',t:'',d:''}, reqReply={};
+const fmtTs=ts=>ts?new Date(ts).toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+function reqSend(){
+  if(!db||me.role!=='player') return;
+  const t=reqDraft.t.trim(); if(!t){toast('Напишите название заявки');return;}
+  const d=mainData[me.color], names=d.chars.map(c=>charName(d,c.id));
+  const ch=reqDraft.ch&&names.includes(reqDraft.ch)?reqDraft.ch:names[0];
+  R(RP).push().set({k:me.color,ch,t:t.slice(0,160),d:reqDraft.d.trim().slice(0,3000),st:'open',ts:Date.now()});
+  reqDraft.t='';reqDraft.d='';renderReq();
+}
+function reqClose(r){if(db&&r.k===me.color&&r.st==='open') R(RP+'/'+r.id+'/st').set('closed');}
+function reqDel(r){if(db&&r.k===me.color&&r.st!=='open') R(RP+'/'+r.id).remove();}
+function reqSet(r,st){
+  if(!db||!isMaster()) return;
+  const txt=(reqReply[r.id]||'').trim().slice(0,1500);
+  R(RP+'/'+r.id).update({st,a:st==='closed'?null:(txt||null)}); delete reqReply[r.id];
+}
+function reqCloseAll(){
+  if(!db||!isMaster()) return;
+  const u={}; reqs.forEach(r=>{if(r.st==='open') u[r.id+'/st']='closed';});
+  if(Object.keys(u).length) R(RP).update(u);
+}
+function reqCard(r,master){
+  const c=el('div','lcard rq '+r.st), h=el('div','lch');
+  const left=el('span'); if(master){left.appendChild(dotEl(r.k)); left.appendChild(document.createTextNode(' '+nickOf(r.k)+' · '));}
+  left.appendChild(document.createTextNode((r.ch||'Персонаж')+' — '+(r.t||'без названия'))); h.appendChild(left);
+  const bd=el('span','rbadge '+r.st); bd.textContent=REQ_ST[r.st]; h.appendChild(bd); c.appendChild(h);
+  if(r.ts) c.appendChild(elt('p','lp muted',fmtTs(r.ts)));
+  if(r.d) c.appendChild(elt('p','lp rtext',r.d));
+  if(!master&&r.a) c.appendChild(elt('p','lp rtext reply','Ответ мастера: '+r.a));
+  const row=el('div','lrow');
+  if(master){
+    const ta=el('textarea','m-in rta'); ta.rows=2; ta.placeholder='Ответ игроку (необязательно)'; ta.maxLength=1500; ta.value=reqReply[r.id]||'';
+    ta.addEventListener('input',()=>{reqReply[r.id]=ta.value;}); c.appendChild(ta);
+    row.appendChild(lbtn('Принято','primary',()=>reqSet(r,'accepted')));
+    row.appendChild(lbtn('Отказано','',()=>reqSet(r,'denied')));
+    row.appendChild(lbtn('Закрыть','',()=>reqSet(r,'closed')));
+  }else if(r.st==='open') row.appendChild(lbtn('Закрыть заявку','',()=>reqClose(r)));
+  else row.appendChild(lbtn('Удалить','',()=>reqDel(r)));
+  c.appendChild(row); return c;
+}
+function renderReq(){
+  reqPending=false; hideTip();
+  const root=$('#reqBody'); if(!root) return; root.innerHTML='';
+  if(!me.role){root.appendChild(elt('p','hint','Войдите, чтобы работать с заявками.'));return;}
+  if(isMaster()){
+    const open=reqs.filter(r=>r.st==='open');
+    const bar=el('div','adminbar'); bar.appendChild(elt('span','lbl','Мастер'));
+    bar.appendChild(elt('span','pill','Открытых заявок: '+open.length));
+    if(open.length) bar.appendChild(lbtn('Закрыть все заявки','',b=>arm(b,reqCloseAll)));
+    root.appendChild(bar);
+    if(!open.length) root.appendChild(elt('p','hint','Новых заявок нет.'));
+    open.forEach(r=>root.appendChild(reqCard(r,true)));
+    return;
+  }
+  const d=mainData[me.color], names=d.chars.map(c=>charName(d,c.id));
+  const form=el('div','lcard rform'); form.appendChild(elt('div','lch','Новая заявка'));
+  const sel=el('select','m-sel rsel'); names.forEach(n=>{const o=el('option'); o.value=n; o.textContent=n; sel.appendChild(o);});
+  if(names.includes(reqDraft.ch)) sel.value=reqDraft.ch; else reqDraft.ch=names[0];
+  sel.addEventListener('change',()=>{reqDraft.ch=sel.value;});
+  const lab=el('label','rlab'); lab.appendChild(elt('span','muted','От лица персонажа')); lab.appendChild(sel); form.appendChild(lab);
+  const ti=el('input','m-in rti'); ti.type='text'; ti.placeholder='Название'; ti.maxLength=160; ti.value=reqDraft.t; ti.addEventListener('input',()=>{reqDraft.t=ti.value;}); form.appendChild(ti);
+  const ta=el('textarea','m-in rta'); ta.rows=4; ta.placeholder='Описание'; ta.maxLength=3000; ta.value=reqDraft.d; ta.addEventListener('input',()=>{reqDraft.d=ta.value;}); form.appendChild(ta);
+  const row=el('div','lrow'); row.appendChild(lbtn('Отправить','primary',reqSend)); form.appendChild(row);
+  root.appendChild(form);
+  const mine=reqs.filter(r=>r.k===me.color).reverse();
+  root.appendChild(elt('h2','rh','Мои заявки'));
+  if(!mine.length) root.appendChild(elt('p','hint','Заявок пока нет.'));
+  mine.forEach(r=>root.appendChild(reqCard(r,false)));
+}
+function renderReqSafe(){
+  const a=document.activeElement;
+  const typing=a&&a.closest&&a.closest('#tab-req')&&(a.tagName==='INPUT'||a.tagName==='SELECT'||a.tagName==='TEXTAREA');
+  if(typing||ptrDown){reqPending=true;return;}
+  renderReq();
+}
+function reqBadge(){
+  const n=isMaster()?reqs.filter(r=>r.st==='open').length:0, b=document.querySelector('.tab[data-tab="req"]');
+  if(b) b.textContent='Заявки'+(n?' ('+n+')':'');
+}
+$('#tab-req').addEventListener('focusout',()=>setTimeout(()=>{if(reqPending&&tab==='req') renderReqSafe();},0));
+document.addEventListener('pointerup',()=>setTimeout(()=>{if(reqPending&&tab==='req') renderReqSafe();},0),true);
+
+/* ---------- календарь: три недели с понедельника, данные в board/main/cal/{ГГГГ-ММ-ДД} ---------- */
+const CAL_WEEKS=3, MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_G=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const WDAYS=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const elt=(t,c,x)=>{const n=el(t,c);n.textContent=x;return n;};
+const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function calStart(now){const t=new Date((now||new Date()).getFullYear(),(now||new Date()).getMonth(),(now||new Date()).getDate());t.setDate(t.getDate()-((t.getDay()+6)%7));return t;}
+let calData={};
+function parseCal(m){
+  const out={}; const c=(m&&m.cal&&typeof m.cal==='object')?m.cal:{};
+  Object.keys(c).forEach(d=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+    const v=c[d]||{}, p={};
+    PCOLORS.forEach(pc=>{if(v.p&&v.p[pc.k]) p[pc.k]=1;});
+    out[d]={p,m:!!v.m,b:!!v.b};
+  });
+  return out;
+}
+function calClick(d){
+  if(!db||!me.role) return;
+  const v=calData[d]||{p:{},m:false,b:false}, base='board/main/cal/'+d;
+  if(isMaster()){
+    // пусто → зелёная полоска → блокировка → пусто
+    if(!v.m&&!v.b) R(base+'/m').set(1);
+    else if(v.m) R(base).update({m:null,b:1});
+    else R(base+'/b').set(null);
+  }else{
+    if(v.b) return;
+    R(base+'/p/'+me.color).set(v.p[me.color]?null:1);
+  }
+}
+function renderCal(){
+  const grid=$('#calGrid'); if(!grid) return;
+  hideTip(); grid.innerHTML='';
+  const st=calStart(), todayK=dkey(new Date());
+  const days=[]; for(let i=0;i<CAL_WEEKS*7;i++){const d=new Date(st);d.setDate(st.getDate()+i);days.push(d);}
+  const a=days[0], b=days[days.length-1];
+  $('#calTitle').textContent=(a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear())?MONTHS[a.getMonth()]+' '+a.getFullYear()
+    :(a.getFullYear()===b.getFullYear()?MONTHS[a.getMonth()]+' — '+MONTHS[b.getMonth()]+' '+a.getFullYear():MONTHS[a.getMonth()]+' '+a.getFullYear()+' — '+MONTHS[b.getMonth()]+' '+b.getFullYear());
+  WDAYS.forEach(w=>grid.appendChild(elt('div','calhd',w)));
+  days.forEach(d=>{
+    const k=dkey(d), v=calData[k]||{p:{},m:false,b:false}, past=k<todayK;
+    const cnt=Object.keys(v.p).length;
+    const btn=el('button','day'); btn.type='button';
+    if(k===todayK) btn.classList.add('today');
+    if(past) btn.classList.add('past');
+    else if(v.b) btn.classList.add('off');
+    else if(cnt>=3&&v.m) btn.classList.add('grn');
+    else if(cnt>=3) btn.classList.add('yel');
+    const dn=elt('span','dn',(d.getDate()===1?d.getDate()+' '+MONTHS_G[d.getMonth()]:String(d.getDate()))); btn.appendChild(dn);
+    const dots=el('span','dots');
+    PCOLORS.forEach(pc=>{if(v.p[pc.k]){const x=dotEl(pc.k); x.title=mainData[pc.k].nick||pc.n; dots.appendChild(x);}});
+    btn.appendChild(dots);
+    if(v.m&&!v.b) btn.appendChild(el('span','stripe'));
+    const can=!past&&!!db&&!!me.role&&(isMaster()||!v.b);
+    if(can){btn.classList.add('can');btn.addEventListener('click',()=>calClick(k));}
+    else btn.disabled=true;
+    btn.setAttribute('aria-label',d.getDate()+' '+MONTHS_G[d.getMonth()]+(v.b?', заблокирован':'')+(cnt?', отметок: '+cnt:''));
+    grid.appendChild(btn);
+  });
+  $('#calLegend').textContent=isMaster()
+    ?'Клик по дню: зелёная полоска → блокировка → пусто. Жёлтый день: 3 и больше игроков. Зелёный: 3 игрока и полоска мастера.'
+    :'Нажмите на день, чтобы поставить или снять свой кружок. Жёлтый день: 3 и больше игроков. Серый: прошёл или заблокирован мастером.';
+}
+// старые дни (до понедельника текущей недели) стираются из базы
+function calCleanup(){
+  if(!db) return;
+  const lim=dkey(calStart());
+  Object.keys(calData).forEach(d=>{if(d<lim) R('board/main/cal/'+d).remove();});
+}
+
 /* ---------- вкладки ---------- */
 function setTab(t,fromHash){
-  tab=(t==='tetris')?'tetris':'main';
+  tab=TABS.includes(t)?t:'main';
   $('#tab-main').hidden=(tab!=='main');
+  $('#tab-calendar').hidden=(tab!=='calendar');
+  $('#tab-loot').hidden=(tab!=='loot');
+  $('#tab-wiki').hidden=(tab!=='wiki');
+  $('#tab-req').hidden=(tab!=='req');
   $('#tab-tetris').hidden=(tab!=='tetris');
   document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
   me.vis=(tab==='tetris');
@@ -1932,7 +2565,7 @@ document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
 }));
 window.addEventListener('hashchange',()=>{
   const h=(location.hash||'').slice(1);
-  if((h==='main'||h==='tetris')&&h!==tab) setTab(h,true);
+  if(TABS.includes(h)&&h!==tab) setTab(h,true);
 });
 
 /* ---------- кнопки с подтверждением ---------- */
@@ -2007,7 +2640,7 @@ document.addEventListener('keydown',e=>{
 function showBanner(t){bannerEl.textContent=t;bannerEl.hidden=false;}
 function start(){
   initDb();
-  setTab((location.hash||'').slice(1)==='tetris'?'tetris':'main',true);
+  {const h0=(location.hash||'').slice(1); setTab(TABS.includes(h0)?h0:'main',true);renderWiki();}
   if(!db){
     showBanner('Не удалось подключиться к Firebase. Проверьте интернет и настройки в начале файла.');
     return;
@@ -2027,9 +2660,9 @@ function start(){
       if(tab==='tetris') requestRender(); else renderTop();
     }
     if(sm!==sigM){
-      sigM=sm; mainData=parseMain(raw.main); cyc=parseCycle(raw.main);
+      sigM=sm; mainData=parseMain(raw.main); cyc=parseCycle(raw.main); calData=parseCal(raw.main); loot=parseLoot(raw.main); reqs=parseReq(raw.main); reqBadge(); calCleanup(); lootAuto(); rpsTick();
       renderCursors();
-      if(tab==='main') renderMainSafe();
+      if(tab==='main') renderMainSafe(); else if(tab==='calendar') renderCal(); else if(tab==='loot') renderLootSafe(); else if(tab==='req') renderReqSafe();
       renderTop();
     }
   },()=>showBanner('Нет доступа к базе. Проверьте правила в Realtime Database.'));
@@ -2037,14 +2670,14 @@ function start(){
   R('colors').on('value',s=>{
     colorsTaken=s.val()||{};
     if(entryRefresh) entryRefresh();
-    if(tab==='main') renderMainSafe();
+    if(tab==='main') renderMainSafe(); else if(tab==='loot') renderLootSafe();
     if(me.role==='player'&&online&&colorsTaken[me.color]!==me.id) reclaimColor();
   });
   entryModal();
 }
 
 window.__pb={
-  get state(){return state;}, get me(){return me;}, get presence(){return presence;}, get main(){return mainData;}, get cyc(){return cyc;}, setTab,
+  get state(){return state;}, get me(){return me;}, get presence(){return presence;}, get main(){return mainData;}, get cyc(){return cyc;}, get cal(){return calData;}, get loot(){return loot;}, get reqs(){return reqs;}, setTab,
   placeProject,saveChar,saveProject,reorderChars,seedExample,pickColor,becomeMaster,toggleBlock,rotateProject,unplace
 };
 start();
