@@ -64,6 +64,9 @@ button{font:inherit;color:inherit}
 /* верхняя строка */
 .top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:14px}
 h1{font:600 17px/1.2 var(--font-display);margin:0;letter-spacing:-.01em}
+h1.editable{cursor:text;border-bottom:1px dashed transparent}
+h1.editable:hover{border-bottom-color:var(--accent)}
+h1 input{font:inherit;letter-spacing:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--accent);border-radius:6px;padding:2px 6px;width:min(60vw,360px)}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--surface)}
 .dot{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:none;display:inline-block}
 .pill.on .dot{background:var(--ok)}
@@ -379,7 +382,7 @@ button.ck-b:hover{background:var(--surface-2)}
 <body>
 
 <div class="top">
-  <h1>Доска Аватюристов</h1>
+  <h1 id="ttl">Доска Аватюристов</h1>
   <span class="pill" id="conn"><span class="dot"></span><span id="connTxt">Подключение…</span></span>
   <span class="pill" id="me" hidden></span>
   <span class="counter" id="counter"></span>
@@ -823,6 +826,7 @@ function renderTop(){
   curLayer.hidden=(tab!=='tetris');
   const master=isMaster();
   adminBar.hidden=!master;
+  applyTitle();
   $('#playerbar').hidden=(me.role!=='player');
   $('#playerbar [data-act="add-mine"]').innerHTML=ICON.plus+'Добавить моего персонажа';
   document.body.classList.toggle('admin',master);
@@ -918,7 +922,7 @@ function onPresence(){
 /* ---------- мой курсор ---------- */
 let presT=null, presLast=0;
 function presObj(){
-  const o={c:isMaster()?'m':me.color,x:Math.round(me.x),y:Math.round(me.y),v:me.vis?1:0};
+  const o={c:isMaster()?'m':me.color,x:Math.round(me.x),y:Math.round(me.y),v:me.vis?1:0,b:Date.now()%1000000000};
   if(drag&&drag.active){o.h=drag.pid;o.r=drag.rot;o.ox=Math.round(drag.off.x);o.oy=Math.round(drag.off.y);}
   return o;
 }
@@ -935,6 +939,24 @@ function schedulePresence(force){
 }
 
 /* ---------- роли и цвета ---------- */
+// цвет считается занятым, пока его владелец «жив»: его запись в presence меняется (пульс раз в 20 с).
+// Если запись не менялась дольше STALE_MS (вкладка закрыта без связи, ноутбук уснул), цвет можно занять сразу.
+const HB_MS=20000, STALE_MS=75000, ownerSeen=new Map();
+function trackOwners(){
+  const now=Date.now(), ids=new Set(Object.values(colorsTaken||{}));
+  ids.forEach(id=>{
+    const sig=presence[id]?JSON.stringify(presence[id]):'none', rec=ownerSeen.get(id);
+    if(!rec||rec.sig!==sig) ownerSeen.set(id,{sig,at:now});
+  });
+  for(const id of [...ownerSeen.keys()]) if(!ids.has(id)) ownerSeen.delete(id);
+}
+function ownerAlive(id){
+  if(!id||id===me.id) return true;
+  trackOwners();
+  const rec=ownerSeen.get(id);
+  return !rec||Date.now()-rec.at<STALE_MS;
+}
+const colorBusy=k=>{const o=colorsTaken[k]; return !!o&&o!==me.id&&ownerAlive(o);};
 function assertPresence(){
   if(!db||!me.role) return;
   R('presence/'+me.id).onDisconnect().remove();
@@ -992,6 +1014,11 @@ function reclaimColor(){
 }
 function pickColor(k){
   if(!db){toast('Нет связи с базой');return;}
+  const own=colorsTaken[k];
+  if(own&&own!==me.id&&!ownerAlive(own)){
+    R('colors/'+k).set(me.id).then(()=>enterRole('player',k),()=>toast('Не удалось занять цвет'));
+    return;
+  }
   R('colors/'+k).transaction(cur=>{
     if(cur===null||cur===me.id) return me.id;
     return undefined;
@@ -1443,9 +1470,11 @@ function entryModal(){
       if(!mf.hidden) mf.querySelector('input').focus();
     };
     entryRefresh=()=>{
+      const sig=PCOLORS.map(c=>colorBusy(c.k)?1:0).join('');
+      if(cp._sig===sig) return; cp._sig=sig;
       cp.innerHTML='';
       PCOLORS.forEach(c=>{
-        const taken=colorsTaken[c.k]&&colorsTaken[c.k]!==me.id;
+        const taken=colorBusy(c.k);
         const b=el('button','cbtn'); b.type='button'; b.dataset.k=c.k; b.disabled=!!taken;
         b.innerHTML='<span class="swc" style="background:'+c.v+'"></span><span>'+c.n+'</span>'+(taken?'<small class="muted">занят</small>':'');
         b.onclick=()=>pickColor(c.k);
@@ -2699,6 +2728,40 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){closePop();if(!modalLocked) closeModal();}
 });
 
+/* ---------- пульс, выход со страницы, название проекта ---------- */
+setInterval(()=>{if(db&&me.role&&online) flushPresence();},HB_MS);
+setInterval(()=>{if(entryRefresh) entryRefresh();},5000);
+// при закрытии страницы освобождаем цвет сразу, не дожидаясь, пока сервер заметит обрыв
+let leaving=false;
+window.addEventListener('pagehide',()=>{
+  if(!db||!me.role) return;
+  leaving=true;
+  try{ if(me.role==='player') R('colors/'+me.color).remove(); R('presence/'+me.id).remove(); }catch(e){}
+});
+window.addEventListener('pageshow',()=>{if(leaving){leaving=false;if(me.role&&db) onConnected();}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&leaving){leaving=false;if(me.role&&db) onConnected();}});
+const TITLE_DEF='Доска Аватюристов'; let boardTitle=''; const ttlEl=$('#ttl');
+function applyTitle(){
+  if(ttlEl.querySelector('input')) return;
+  const t=boardTitle||TITLE_DEF;
+  ttlEl.textContent=t; document.title=t;
+  ttlEl.classList.toggle('editable',isMaster());
+  ttlEl.title=isMaster()?'Нажмите, чтобы изменить название':'';
+}
+ttlEl.addEventListener('click',()=>{
+  if(!isMaster()||!db||ttlEl.querySelector('input')) return;
+  const inp=el('input'); inp.type='text'; inp.maxLength=60; inp.value=boardTitle||TITLE_DEF; inp.setAttribute('aria-label','Название проекта');
+  ttlEl.textContent=''; ttlEl.appendChild(inp); inp.focus(); inp.select();
+  let done=false;
+  const finish=save=>{
+    if(done) return; done=true;
+    if(save){const v=inp.value.trim().slice(0,60); R('board/main/title').set(v&&v!==TITLE_DEF?v:null); boardTitle=(v&&v!==TITLE_DEF)?v:'';}
+    inp.remove(); applyTitle();
+  };
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();finish(true);}else if(e.key==='Escape'){e.stopPropagation();finish(false);}});
+  inp.addEventListener('blur',()=>finish(false));
+});
+
 /* ---------- запуск ---------- */
 function showBanner(t){bannerEl.textContent=t;bannerEl.hidden=false;}
 function start(){
@@ -2723,18 +2786,18 @@ function start(){
       if(tab==='tetris') requestRender(); else renderTop();
     }
     if(sm!==sigM){
-      sigM=sm; mainData=parseMain(raw.main); cyc=parseCycle(raw.main); calData=parseCal(raw.main); loot=parseLoot(raw.main); reqs=parseReq(raw.main); reqBadge(); calCleanup(); lootAuto(); rpsTick();
+      sigM=sm; boardTitle=String((raw.main&&raw.main.title)||'').slice(0,60); applyTitle(); mainData=parseMain(raw.main); cyc=parseCycle(raw.main); calData=parseCal(raw.main); loot=parseLoot(raw.main); reqs=parseReq(raw.main); reqBadge(); calCleanup(); lootAuto(); rpsTick();
       renderCursors();
       if(tab==='main') renderMainSafe(); else if(tab==='calendar') renderCal(); else if(tab==='loot') renderLootSafe(); else if(tab==='req') renderReqSafe();
       renderTop();
     }
   },()=>showBanner('Нет доступа к базе. Проверьте правила в Realtime Database.'));
-  R('presence').on('value',s=>{presence=s.val()||{};onPresence();});
+  R('presence').on('value',s=>{presence=s.val()||{};trackOwners();onPresence();if(entryRefresh) entryRefresh();});
   R('colors').on('value',s=>{
-    colorsTaken=s.val()||{};
+    colorsTaken=s.val()||{}; trackOwners();
     if(entryRefresh) entryRefresh();
     if(tab==='main') renderMainSafe(); else if(tab==='loot') renderLootSafe();
-    if(me.role==='player'&&online&&colorsTaken[me.color]!==me.id) reclaimColor();
+    if(me.role==='player'&&online&&!leaving&&colorsTaken[me.color]!==me.id) reclaimColor();
   });
   entryModal();
 }
