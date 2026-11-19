@@ -18,6 +18,7 @@
   --slot:#E3E8F0; --slot-line:#C6CFDD;
   --accent:#17687F; --accent-fg:#FFFFFF; --accent-soft:#DDECF1;
   --ok:#16A34A; --bad:#E5484D;
+  --court-off:#9AA3B2; --court-red:#D1242B; --lens-ok:#12803B;
   --block:#1B202C; --block-line:#3B4559;
   --cur-fill:#141922; --cur-stroke:#FFFFFF;
   --shadow:0 8px 28px rgba(23,32,51,.16);
@@ -28,7 +29,7 @@
     --bg:#0F141C; --surface:#171E2A; --surface-2:#1C2433; --fg:#E7ECF4; --muted:#93A0B6; --line:#2B3648;
     --slot:#222C3C; --slot-line:#34435B;
     --accent:#4FB3D1; --accent-fg:#0B1620; --accent-soft:#183040;
-    --ok:#2FD16B; --bad:#FF6369;
+    --ok:#2FD16B; --bad:#FF6369; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
     --block:#06080C; --block-line:#46536C;
     --cur-fill:#FFFFFF; --cur-stroke:#141922;
     --shadow:0 8px 28px rgba(0,0,0,.5);
@@ -39,7 +40,7 @@
   --bg:#0F141C; --surface:#171E2A; --surface-2:#1C2433; --fg:#E7ECF4; --muted:#93A0B6; --line:#2B3648;
   --slot:#222C3C; --slot-line:#34435B;
   --accent:#4FB3D1; --accent-fg:#0B1620; --accent-soft:#183040;
-  --ok:#2FD16B; --bad:#FF6369;
+  --ok:#2FD16B; --bad:#FF6369; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
   --block:#06080C; --block-line:#46536C;
   --cur-fill:#FFFFFF; --cur-stroke:#141922;
   --shadow:0 8px 28px rgba(0,0,0,.5);
@@ -71,6 +72,7 @@ h1{font:600 17px/1.2 var(--font-display);margin:0;letter-spacing:-.01em}
 
 .btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
 .btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
 .btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
 .btn.danger{color:var(--bad)}
 .btn.armed{background:var(--bad);border-color:var(--bad);color:#fff}
@@ -189,6 +191,70 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:3000;background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13px;font-weight:500;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
 
+/* вкладки */
+.tabs{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
+.tab{border:0;background:transparent;padding:9px 18px;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;border-radius:8px 8px 0 0}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* главная таблица */
+.mwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.mt{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1971px;font-size:13px}
+.mt th{background:var(--surface-2);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 6px;border:1px solid var(--line);text-align:center}
+.mt td{border:1px solid var(--line);padding:6px 8px;vertical-align:middle}
+.mt th:first-child,.mt td:first-child{border-left:0}
+.mt th:last-child,.mt td:last-child{border-right:0}
+.mt thead tr:first-child th{border-top:0}
+.mt tbody tr:last-child td{border-bottom:0}
+.mt tr.mine td{background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+.mt td.lv{text-align:center}
+.mt th:first-child,.mt td:first-child{position:sticky;left:0;z-index:1}
+.mt td:first-child{background:var(--surface)}
+.plw{display:flex;align-items:center;gap:8px}
+.pdot{width:13px;height:13px;border-radius:50%;flex:none}
+.pdot.free{opacity:.35}
+.ent{display:flex;align-items:center;gap:3px;margin:2px 0;min-height:30px}
+.tx{flex:1;min-width:0;overflow-wrap:anywhere}
+span.tx{padding:4px 2px}
+input.m-in{font:inherit;color:inherit;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;width:100%;min-width:0}
+input.m-in:hover{border-color:var(--line)}
+input.m-in:focus{border-color:var(--accent);background:var(--surface);outline:none}
+input.m-in::placeholder{color:var(--muted);opacity:.7}
+input.m-sq{width:34px;flex:none;text-align:center;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font-weight:700;padding:4px 0}
+.m-sel{font:inherit;font-size:12px;width:100px;flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:6px;padding:4px 2px}
+.m-b{width:22px;height:22px;flex:none;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:12px;line-height:1;cursor:pointer;padding:0}
+.m-b:hover{border-color:var(--accent);color:var(--accent)}
+.m-b.on{background:var(--court-off);border-color:var(--court-off);color:#fff}
+.m-b.armed{background:var(--bad);border-color:var(--bad);color:#fff}
+.m-b.wide{width:auto;padding:0 8px;margin-top:6px}
+.m-add{display:block;width:100%;height:24px;margin-top:4px;border:1px dashed var(--line);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-weight:700;padding:0}
+.m-add:hover{border-color:var(--accent);color:var(--accent)}
+.court.hot .tx,.court.hot input.m-sq{color:var(--court-red)}
+.court.strong .tx{font-weight:700}
+.court.off .tx,.court.off input.m-sq{color:var(--court-off)}
+.lens.warn .tx,.lens.warn input.m-sq{color:var(--court-red)}
+.lens.done .tx,.lens.done input.m-sq{color:var(--lens-ok)}
+.lsep{color:var(--muted);flex:none}
+.chk{margin-top:18px}
+.chk h2{font:600 13px var(--font-display);margin:0 0 8px}
+.ck{border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px}
+.ck th,.ck td{border:1px solid var(--line);padding:7px 12px;text-align:center}
+.ck th{background:var(--surface-2);font-weight:600;font-size:12px}
+.ck td:first-child,.ck th:first-child{text-align:left}
+.ck th .pdot{display:inline-block;vertical-align:-1px;margin-right:6px}
+.ck th small{color:var(--muted);font-weight:600;margin-left:4px}
+.ck-b{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;border:0;background:transparent;padding:0;font:700 17px/1 var(--font-body)}
+button.ck-b{cursor:pointer}
+button.ck-b:hover{background:var(--surface-2)}
+.ck-b svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ck-b.no{opacity:.55}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 2px 0;font-size:12px;color:var(--fg)}
+.lg.hotc{color:var(--court-red)}
+.lg.strongc{font-weight:700}
+.lg.offc{color:var(--court-off)}
+.lg.okc{color:var(--lens-ok)}
+.lg b{color:var(--muted);font-weight:600}
+
 @media (max-width:860px){
   .stage{flex-direction:column}
   .boardscroll{max-width:100%;width:100%}
@@ -208,6 +274,35 @@ body.dragging,body.dragging *{cursor:grabbing!important}
   <button class="btn" type="button" id="modeBtn" data-act="mode"></button>
 </div>
 
+<nav class="tabs" role="tablist" aria-label="Разделы">
+  <button class="tab" type="button" role="tab" data-tab="main">Главная</button>
+  <button class="tab" type="button" role="tab" data-tab="tetris">Тетрис</button>
+</nav>
+
+<section id="tab-main" hidden>
+  <div class="adminbar" id="madmin" hidden>
+    <span class="lbl">Мастер</span>
+    <button class="btn primary" type="button" id="cStart">Начало обработки цикла</button>
+    <button class="btn" type="button" id="cEnd">Завершение цикла</button>
+    <span class="pill" id="cState"></span>
+  </div>
+  <div class="mwrap"><table class="mt" id="mt"></table></div>
+  <section class="chk" id="chk" hidden>
+    <h2>Обработка цикла</h2>
+    <div class="mwrap"><table class="ck" id="ck"></table></div>
+  </section>
+  <p class="legend">
+    <span class="lg"><b>Дворы:</b> обычный</span>
+    <span class="lg hotc">мощнее персонажа</span>
+    <span class="lg strongc">связан с историей</span>
+    <span class="lg offc">отключён</span>
+    <span class="lg okc"><b>Линзы:</b> цель достигнута</span>
+    <span class="lg hotc">дошла до нуля</span>
+  </p>
+  <p class="hint" id="mhint"></p>
+</section>
+
+<section id="tab-tetris" hidden>
 <div class="adminbar" id="adminbar" hidden>
   <span class="lbl">Мастер</span>
   <button class="btn primary" type="button" data-act="add-char"></button>
@@ -228,6 +323,7 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 </main>
 
 <p class="hint" id="hint"></p>
+</section>
 <div id="cursors"></div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 <div class="banner" id="banner" hidden></div>
@@ -288,6 +384,8 @@ let state={chars:[],blocks:{},projects:[]};   // доска (общая для �
 let presence={};                              // курсоры
 let colorsTaken={};                           // занятые цвета
 let loaded=false, online=false, pending=false, selected=null;
+let tab='main';                               // вкладка: 'main' или 'tetris'
+const TIERS=5;
 const cellMap=new Map();
 
 const me={id:null,role:null,color:null,x:0,y:0,vis:true};
@@ -534,6 +632,8 @@ function renderPanel(){
 function renderTop(){
   const placed=state.projects.filter(p=>p.at).length;
   counterEl.textContent='В доске '+placed+' из '+state.projects.length;
+  counterEl.hidden=(tab!=='tetris');
+  curLayer.hidden=(tab!=='tetris');
   const master=isMaster();
   adminBar.hidden=!master;
   document.body.classList.toggle('admin',master);
@@ -541,6 +641,14 @@ function renderTop(){
   modeBtn.innerHTML=master?'Выйти из режима мастера':ICON.lock+'Режим мастера';
   adminBar.querySelector('[data-act="add-char"]').innerHTML=ICON.plus+'Персонаж';
   adminBar.querySelector('[data-act="add-proj"]').innerHTML=ICON.plus+'Проект';
+  $('#madmin').hidden=!master;
+  $('#cStart').disabled=cyc.open;
+  $('#cState').textContent=cyc.open?'Идёт обработка цикла':'Цикл не запущен';
+  $('#mhint').textContent=master
+    ? 'Мастер может править все строки и очищать их. Кнопка «О» отключает двор, «×» удаляет. Линза зеленеет, когда достигла цели, и краснеет на нуле. Красную линзу удаляет только мастер.'
+    : (me.role
+        ? 'Вы правите только свою строку (рядом с ником цветной кружок). Остальные строки видны всем, но изменить их нельзя. Кнопка «О» отключает двор, «×» удаляет.'
+        : '');
   connEl.className='pill'+(online?' on':'');
   connTxt.textContent=online?'Онлайн':(db?'Нет связи':'Не подключено');
   if(!me.role){meEl.hidden=true;}
@@ -555,7 +663,12 @@ function renderTop(){
 }
 
 function busy(){return !!((drag&&drag.active)||(rdrag&&rdrag.active));}
-function render(){pending=false;renderBoard();renderPanel();renderTop();renderCursors();}
+function render(){
+  pending=false;
+  if(tab==='tetris'){renderBoard();renderPanel();renderCursors();}
+  else renderMainSafe();
+  renderTop();
+}
 function requestRender(){if(busy()) pending=true; else render();}
 function flushPending(){if(pending&&!busy()) render();}
 
@@ -635,7 +748,8 @@ function pickColor(k){
     if(cur===null||cur===me.id) return me.id;
     return undefined;
   },(err,ok)=>{
-    if(err||!ok){toast('Этот цвет уже занят, выберите другой');return;}
+    if(err){toast('Не удалось связаться с базой'+(err.code?' ('+err.code+')':'')+'. Проверьте интернет и правила Firebase.');return;}
+    if(!ok){toast('Этот цвет уже занят, выберите другой');return;}
     enterRole('player',k);
   });
 }
@@ -1177,6 +1291,328 @@ function projectModal(id){
   });
 }
 
+/* ---------- главная таблица: данные ---------- */
+const numOrNull=v=>(v===null||v===undefined||v==='')?null:(Number.isFinite(+v)?+v:null);
+const byId=(a,b)=>a.id<b.id?-1:(a.id>b.id?1:0);
+function parseMain(val){
+  const out={};
+  PCOLORS.forEach(pc=>{
+    const r=(val&&val[pc.k])||{};
+    const courts=[];
+    for(let t=1;t<=TIERS;t++){
+      courts.push(Object.entries((r.courts&&r.courts['t'+t])||{}).map(([id,c])=>({
+        id,n:String((c&&c.n)||''),l:numOrNull(c&&c.l),off:!!(c&&c.off)
+      })).sort(byId));
+    }
+    out[pc.k]={
+      nick:String(r.nick||''),ch:String(r.ch||''),lv:numOrNull(r.lv),
+      stories:Object.entries(r.stories||{}).map(([id,s])=>({
+        id,n:String((s&&s.n)||''),p:numOrNull(s&&s.p),c:String((s&&s.c)||'')
+      })).sort(byId),
+      lenses:Object.entries(r.lenses||{}).map(([id,l])=>({
+        id,n:String((l&&l.n)||''),v:numOrNull(l&&l.v),g:numOrNull(l&&l.g)
+      })).sort(byId),
+      courts
+    };
+  });
+  return out;
+}
+function parseCycle(m){
+  return{open:!!(m&&m.cycle&&m.cycle.open),checks:(m&&m.checks&&typeof m.checks==='object')?m.checks:{}};
+}
+let mainData=parseMain(null), cyc=parseCycle(null);
+const CHECKS=['Спишите линзу на 1, если она не росла','Расход и доход денег','Обработайте ОТ и заживление травм','Обработайте Активацию постоянных бонусов/базы','Получите внимание'];
+let mainPending=false, ptrDown=false, focusNext=null;
+
+const canEdit=k=>!!(db&&me.role&&(isMaster()||me.color===k));
+const MP=k=>'board/main/'+k;
+function mset(k,path,v){if(canEdit(k)) R(MP(k)+'/'+path).set(v);}
+function addItem(k,path){
+  if(!canEdit(k)) return;
+  const key=R(MP(k)+'/'+path).push().key;
+  focusNext=key;
+  R(MP(k)+'/'+path+'/'+key).set({n:''});
+}
+function delCourt(k,t,cid){
+  if(!canEdit(k)) return;
+  const u={}; u['courts/t'+t+'/'+cid]=null;
+  mainData[k].stories.forEach(s=>{if(s.c===cid) u['stories/'+s.id+'/c']=null;});
+  R(MP(k)).update(u);
+}
+function clearRow(k){if(isMaster()&&db) R(MP(k)).remove();}
+
+/* ---------- главная таблица: отрисовка ---------- */
+function confirmBtn(b,fn){
+  if(b.classList.contains('armed')){clearTimeout(b._t);b.classList.remove('armed');fn();return;}
+  b._o=b.textContent; b.classList.add('armed');
+  if(b.classList.contains('wide')) b.textContent='Точно?';
+  b._t=setTimeout(()=>{b.classList.remove('armed');b.textContent=b._o;},2500);
+}
+const enterBlur=e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur();}};
+function mText(s,cls){const n=el('span','tx'+(cls?' '+cls:''));n.textContent=s;return n;}
+function mInput(val,ph,commit,fid){
+  const i=el('input','m-in tx'); i.type='text'; i.value=val; i.title=val; i.placeholder=ph; i.maxLength=60; i.autocomplete='off';
+  if(fid) i.dataset.fid=fid;
+  i.addEventListener('change',()=>commit(i.value));
+  i.addEventListener('keydown',enterBlur);
+  return i;
+}
+function mNum(val,ph,commit){
+  const i=el('input','m-in m-sq'); i.type='text'; i.inputMode='numeric'; i.maxLength=5; i.autocomplete='off';
+  const orig=val===null?'':String(val);
+  i.value=orig; i.placeholder=ph;
+  i.addEventListener('change',()=>{
+    const s=i.value.trim();
+    if(s===''){commit(null);return;}
+    const n=parseInt(s,10);
+    if(!Number.isFinite(n)){i.value=orig;return;}
+    commit(Math.max(-9999,Math.min(99999,n)));
+  });
+  i.addEventListener('keydown',enterBlur);
+  i.addEventListener('focus',()=>i.select());
+  return i;
+}
+function mBtn(txt,cls,title,fn){
+  const b=el('button','m-b'+(cls?' '+cls:'')); b.type='button'; b.textContent=txt; if(title) b.title=title; b.onclick=fn; return b;
+}
+function addBtn(title,fn){
+  const b=el('button','m-add'); b.type='button'; b.textContent='+'; b.title=title; b.setAttribute('aria-label',title); b.onclick=fn; return b;
+}
+
+function mainRow(pc){
+  const k=pc.k, d=mainData[k], ed=canEdit(k);
+  const tr=el('tr',(me.color===k&&!isMaster())?'mine':'');
+  const courtsAll=[]; d.courts.forEach((arr,i)=>arr.forEach(c=>courtsAll.push({t:i+1,c})));
+  const courtById=id=>courtsAll.find(x=>x.c.id===id);
+  const linked=new Set(d.stories.map(s=>s.c).filter(id=>id&&courtById(id)));
+
+  // игрок
+  let td=el('td','pl');
+  const wrap=el('div','plw');
+  const dot=el('span','pdot'+(colorsTaken[k]?'':' free')); dot.style.background=pc.v;
+  dot.title=pc.n+(colorsTaken[k]?'':' (цвет не занят)');
+  wrap.appendChild(dot);
+  wrap.appendChild(ed?mInput(d.nick,'Ник',v=>mset(k,'nick',v)):mText(d.nick));
+  td.appendChild(wrap);
+  if(isMaster()){
+    const cb=mBtn('Очистить','wide','Очистить всю строку',()=>confirmBtn(cb,()=>clearRow(k)));
+    td.appendChild(cb);
+  }
+  tr.appendChild(td);
+
+  // персонаж и уровень
+  td=el('td','ch');
+  td.appendChild(ed?mInput(d.ch,'Персонаж',v=>mset(k,'ch',v)):mText(d.ch));
+  tr.appendChild(td);
+  td=el('td','lv');
+  td.appendChild(ed?mNum(d.lv,'—',v=>mset(k,'lv',v)):mText(d.lv===null?'':String(d.lv)));
+  tr.appendChild(td);
+
+  // репутация (истории)
+  td=el('td','rep');
+  d.stories.forEach(s=>{
+    const cur=courtById(s.c);
+    const row=el('div','ent');
+    if(ed){
+      row.appendChild(mInput(s.n,'История',v=>mset(k,'stories/'+s.id+'/n',v),s.id));
+      row.appendChild(mNum(s.p,'0',v=>mset(k,'stories/'+s.id+'/p',v)));
+      const sel=el('select','m-sel'); sel.setAttribute('aria-label','Связанный двор');
+      sel.appendChild(new Option('— двор —',''));
+      courtsAll.forEach(x=>sel.appendChild(new Option('T'+x.t+' '+(x.c.n||'без названия'),x.c.id)));
+      sel.value=cur?cur.c.id:'';
+      sel.addEventListener('change',()=>{mset(k,'stories/'+s.id+'/c',sel.value||null);sel.blur();});
+      row.appendChild(sel);
+      const xb=mBtn('×','','Удалить историю',()=>confirmBtn(xb,()=>mset(k,'stories/'+s.id,null)));
+      row.appendChild(xb);
+    }else{
+      const parts=[s.n];
+      if(s.p!==null) parts.push(String(s.p));
+      if(cur) parts.push('['+(cur.c.n||'двор')+']');
+      row.appendChild(mText(parts.filter(Boolean).join(' ')));
+    }
+    td.appendChild(row);
+  });
+  if(ed) td.appendChild(addBtn('Добавить историю',()=>addItem(k,'stories')));
+  tr.appendChild(td);
+
+  // дворы T1..T5
+  d.courts.forEach((arr,i)=>{
+    const t=i+1, cell=el('td','ct');
+    arr.forEach(c=>{
+      let cls='ent court';
+      if(c.off) cls+=' off';
+      else if(d.lv!==null&&c.l!==null&&c.l>d.lv) cls+=' hot';
+      if(linked.has(c.id)) cls+=' strong';
+      const row=el('div',cls);
+      if(ed){
+        const base='courts/t'+t+'/'+c.id;
+        row.appendChild(mInput(c.n,'Двор',v=>mset(k,base+'/n',v),c.id));
+        row.appendChild(mNum(c.l,'0',v=>mset(k,base+'/l',v)));
+        row.appendChild(mBtn('О',c.off?'on':'',c.off?'Включить двор':'Отключить двор',()=>mset(k,base+'/off',c.off?null:true)));
+        const xb=mBtn('×','','Удалить двор',()=>confirmBtn(xb,()=>delCourt(k,t,c.id)));
+        row.appendChild(xb);
+      }else{
+        row.appendChild(mText((c.n+(c.l!==null?' '+c.l:'')).trim()));
+      }
+      cell.appendChild(row);
+    });
+    if(ed) cell.appendChild(addBtn('Добавить двор в T'+t,()=>addItem(k,'courts/t'+t)));
+    tr.appendChild(cell);
+  });
+
+  // линзы
+  td=el('td','ln');
+  d.lenses.forEach(l=>{
+    const row=el('div','ent lens '+lensCls(l));
+    if(ed){
+      const base='lenses/'+l.id;
+      row.appendChild(mInput(l.n,'Линза',v=>mset(k,base+'/n',v),l.id));
+      row.appendChild(mNum(l.v,'0',v=>mset(k,base+'/v',v)));
+      const sep=el('span','lsep'); sep.textContent='/'; row.appendChild(sep);
+      row.appendChild(mNum(l.g,'цель',v=>mset(k,base+'/g',v)));
+      if(canDelLens(k,l)){
+        const xb=mBtn('×','','Удалить линзу',()=>confirmBtn(xb,()=>{if(canDelLens(k,l)) mset(k,base,null);}));
+        row.appendChild(xb);
+      }
+    }else{
+      row.appendChild(mText((l.n+(l.v!==null?' '+l.v:'')+(l.g!==null?' / '+l.g:'')).trim()));
+    }
+    td.appendChild(row);
+  });
+  if(ed) td.appendChild(addBtn('Добавить линзу',()=>addItem(k,'lenses')));
+  tr.appendChild(td);
+  return tr;
+}
+// зелёная: достигла цели; красная: дошла до нуля. Больше никакой автоматики.
+function lensCls(l){
+  if(l.v===null) return '';
+  if(l.g!==null&&l.v>=l.g) return 'done';
+  if(l.v<=0) return 'warn';
+  return '';
+}
+// удалить линзу: мастер всегда; игрок (своего цвета) только достигнутую или пустую заготовку
+function canDelLens(k,l){
+  if(isMaster()) return true;
+  if(!canEdit(k)) return false;
+  return lensCls(l)==='done'||(!l.n&&l.v===null&&l.g===null);
+}
+
+/* ---------- цикл и чекбоксы ---------- */
+function activePlayers(){
+  return PCOLORS.filter(pc=>{
+    const d=mainData[pc.k];
+    return d.nick||d.ch||d.lv!==null||d.stories.length||d.lenses.length||d.courts.some(a=>a.length);
+  });
+}
+function toggleCheck(k,i){
+  if(!cyc.open||!canEdit(k)) return;
+  const on=!!(cyc.checks[k]&&cyc.checks[k]['i'+i]);
+  R('board/main/checks/'+k+'/i'+i).set(on?null:true);
+}
+function renderChecks(){
+  const box=$('#chk'); box.hidden=!cyc.open;
+  if(!cyc.open) return;
+  const t=$('#ck'); t.innerHTML='';
+  const pl=activePlayers();
+  if(!pl.length){t.innerHTML='<tbody><tr><td>Пока нет заполненных строк игроков.</td></tr></tbody>';return;}
+  const head=el('tr'), h0=el('th'); h0.textContent='Пункт'; head.appendChild(h0);
+  pl.forEach(pc=>{
+    const d=mainData[pc.k], got=CHECKS.filter((_,i)=>cyc.checks[pc.k]&&cyc.checks[pc.k]['i'+i]).length;
+    const th=el('th'), dot=el('span','pdot'); dot.style.background=pc.v;
+    th.appendChild(dot); th.appendChild(document.createTextNode(d.nick||pc.n));
+    const sm=el('small'); sm.textContent=got+'/'+CHECKS.length; th.appendChild(sm);
+    head.appendChild(th);
+  });
+  const th=el('thead'); th.appendChild(head); t.appendChild(th);
+  const tb=el('tbody');
+  CHECKS.forEach((txt,i)=>{
+    const tr=el('tr'), c0=el('td'); c0.textContent=txt; tr.appendChild(c0);
+    pl.forEach(pc=>{
+      const on=!!(cyc.checks[pc.k]&&cyc.checks[pc.k]['i'+i]);
+      const td=el('td'), n=el(canEdit(pc.k)?'button':'span','ck-b'+(on?'':' no'));
+      if(n.tagName==='BUTTON'){n.type='button';n.onclick=()=>toggleCheck(pc.k,i);}
+      n.style.color=pc.v; n.innerHTML=on?ICON.check:'✕';
+      n.setAttribute('role','img'); n.setAttribute('aria-label',(on?'Отмечено: ':'Не отмечено: ')+txt);
+      td.appendChild(n); tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+function startCycle(){
+  if(!isMaster()||!db) return;
+  R('board/main').update({'cycle/open':true,'checks':null});
+}
+function endCycle(){
+  if(!isMaster()||!db) return;
+  const u={'cycle/open':null,'checks':null}; let sN=0;
+  PCOLORS.forEach(pc=>{
+    const d=mainData[pc.k], all=[]; d.courts.forEach(a=>a.forEach(c=>all.push(c)));
+    d.stories.forEach(s=>{
+      if(s.p===null||!s.c) return;
+      const c=all.find(x=>x.id===s.c);
+      if(!c||c.l===null||c.l===0) return;
+      u[pc.k+'/stories/'+s.id+'/p']=s.p-c.l; sN++;
+    });
+  });
+  R('board/main').update(u);
+  toast('Цикл завершён. Мощь списана у историй: '+sN);
+}
+
+function renderMain(){
+  mainPending=false;
+  const tbl=$('#mt');
+  tbl.innerHTML='<colgroup><col style="width:140px"><col style="width:120px"><col style="width:56px"><col style="width:330px">'
+    +Array.from({length:TIERS},()=>'<col style="width:215px">').join('')+'<col style="width:250px"></colgroup>'
+    +'<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th><th rowspan="2">Линзы</th></tr><tr>'
+    +Array.from({length:TIERS},(_,i)=>'<th>T'+(i+1)+'</th>').join('')+'</tr></thead>';
+  const tb=el('tbody');
+  PCOLORS.forEach(pc=>tb.appendChild(mainRow(pc)));
+  tbl.appendChild(tb);
+  renderChecks();
+  if(focusNext){
+    const n=tbl.querySelector('[data-fid="'+focusNext+'"]'); focusNext=null;
+    if(n) n.focus();
+  }
+}
+// не перерисовываем таблицу, пока человек печатает или держит кнопку мыши, чтобы не сбить ввод и клик
+function renderMainSafe(){
+  const a=document.activeElement;
+  const typing=a&&a.closest&&a.closest('#mt')&&(a.tagName==='INPUT'||a.tagName==='SELECT');
+  if(typing||ptrDown){mainPending=true;return;}
+  renderMain();
+}
+function flushMain(){setTimeout(()=>{if(mainPending&&tab==='main') renderMainSafe();},0);}
+document.addEventListener('pointerdown',()=>{ptrDown=true;},true);
+document.addEventListener('pointerup',()=>{ptrDown=false;flushMain();},true);
+document.addEventListener('pointercancel',()=>{ptrDown=false;flushMain();},true);
+window.addEventListener('blur',()=>{ptrDown=false;});
+$('#mt').addEventListener('focusout',flushMain);
+
+/* ---------- вкладки ---------- */
+function setTab(t,fromHash){
+  tab=(t==='tetris')?'tetris':'main';
+  $('#tab-main').hidden=(tab!=='main');
+  $('#tab-tetris').hidden=(tab!=='tetris');
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
+  me.vis=(tab==='tetris');
+  closePop(); selected=null;
+  if(!fromHash){try{history.replaceState(null,'','#'+tab);}catch(e){}}
+  if(tab==='main') mainPending=false;
+  render();
+  schedulePresence(true);
+}
+$('#cStart').addEventListener('click',startCycle);
+$('#cEnd').addEventListener('click',e=>arm(e.currentTarget,endCycle));
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+  if(busy()) return;
+  setTab(b.dataset.tab);
+}));
+window.addEventListener('hashchange',()=>{
+  const h=(location.hash||'').slice(1);
+  if((h==='main'||h==='tetris')&&h!==tab) setTab(h,true);
+});
+
 /* ---------- кнопки с подтверждением ---------- */
 function arm(btn,fn){
   if(btn._t){clearTimeout(btn._t);btn._t=null;btn.classList.remove('armed');btn.innerHTML=btn._orig;fn();return;}
@@ -1225,6 +1661,7 @@ document.addEventListener('pointerdown',e=>{
 });
 
 document.addEventListener('pointermove',e=>{
+  if(tab!=='tetris') return;
   const br=boardEl.getBoundingClientRect();
   me.x=e.clientX-br.left; me.y=e.clientY-br.top;
   if(!me.vis){me.vis=true;schedulePresence(true);return;}
@@ -1248,7 +1685,7 @@ document.addEventListener('keydown',e=>{
 function showBanner(t){bannerEl.textContent=t;bannerEl.hidden=false;}
 function start(){
   initDb();
-  render();
+  setTab((location.hash||'').slice(1)==='tetris'?'tetris':'main',true);
   if(!db){
     showBanner('Не удалось подключиться к Firebase. Проверьте интернет и настройки в начале файла.');
     return;
@@ -1257,15 +1694,29 @@ function start(){
     online=!!s.val(); renderTop();
     if(online){bannerEl.hidden=true;onConnected();}
   });
-  R('board').on('value',s=>{state=parseBoard(s.val());loaded=true;requestRender();},
-    ()=>showBanner('Нет доступа к базе. Проверьте правила в Realtime Database.'));
+  let sigT=null, sigM=null;
+  R('board').on('value',s=>{
+    const raw=s.val()||{};
+    loaded=true;
+    const rest=Object.assign({},raw); delete rest.main;
+    const st=JSON.stringify(rest), sm=JSON.stringify(raw.main||null);
+    if(st!==sigT){
+      sigT=st; state=parseBoard(rest);
+      if(tab==='tetris') requestRender(); else renderTop();
+    }
+    if(sm!==sigM){
+      sigM=sm; mainData=parseMain(raw.main); cyc=parseCycle(raw.main);
+      if(tab==='main') renderMainSafe();
+      renderTop();
+    }
+  },()=>showBanner('Нет доступа к базе. Проверьте правила в Realtime Database.'));
   R('presence').on('value',s=>{presence=s.val()||{};onPresence();});
-  R('colors').on('value',s=>{colorsTaken=s.val()||{};if(entryRefresh) entryRefresh();});
+  R('colors').on('value',s=>{colorsTaken=s.val()||{};if(entryRefresh) entryRefresh();if(tab==='main') renderMainSafe();});
   entryModal();
 }
 
 window.__pb={
-  get state(){return state;}, get me(){return me;}, get presence(){return presence;},
+  get state(){return state;}, get me(){return me;}, get presence(){return presence;}, get main(){return mainData;}, get cyc(){return cyc;}, setTab,
   placeProject,saveChar,saveProject,reorderChars,seedExample,pickColor,becomeMaster,toggleBlock,rotateProject,unplace
 };
 start();
