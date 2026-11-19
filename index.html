@@ -110,6 +110,8 @@ h1{font:600 17px/1.2 var(--font-display);margin:0;letter-spacing:-.01em}
 .slot.block{background-color:var(--block);border-color:var(--block-line);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 4px,transparent 4px 9px)}
 .admin .cell:not([data-pid]){cursor:pointer}
 .admin .cell:not([data-pid]):hover .slot{border-color:var(--accent)}
+.row.own .cell:not([data-pid]){cursor:pointer}
+.row.own .cell:not([data-pid]):hover .slot{border-color:var(--accent)}
 .cell[data-pid]{cursor:grab;touch-action:none}
 .cell.sel .slot{filter:brightness(1.14)}
 .cell.lifted .slot{opacity:.28}
@@ -489,6 +491,11 @@ button.ck-b:hover{background:var(--surface-2)}
   <button class="btn" type="button" data-act="reset-blocks">Сбросить все заглушки</button>
 </div>
 
+<div class="adminbar" id="playerbar" hidden>
+  <span class="lbl">Мои персонажи</span>
+  <button class="btn primary" type="button" data-act="add-mine"></button>
+</div>
+
 <main class="stage">
   <div class="boardscroll" id="scroller">
     <div class="board" id="board">
@@ -604,7 +611,8 @@ function parseProjects(raw){
 function parseBoard(val){
   val=val||{};
   const chars=Object.entries(val.chars||{}).map(([id,c])=>({
-    id,name:String((c&&c.name)||'?'),len:Math.max(1,Math.min(14,num(c&&c.len,1))),order:num(c&&c.order,0)
+    id,name:String((c&&c.name)||'?'),len:Math.max(1,Math.min(14,num(c&&c.len,1))),order:num(c&&c.order,0),
+    o:(c&&PCK[c.o])?c.o:'',m:String((c&&c.m)||'')
   })).sort((a,b)=>a.order-b.order||(a.id<b.id?-1:1));
   const blocks={};
   for(const [id,o] of Object.entries(val.blocks||{})){
@@ -720,15 +728,15 @@ function renderBoard(){
     firsts.set(p.id,(p.at.r+cs[0][0])+','+(p.at.c+cs[0][1]));
   }
   state.chars.forEach((ch,i)=>{
-    const row=el('div','row'); row.dataset.i=i; row.dataset.id=ch.id;
+    const row=el('div','row'+(canTE(ch)&&!master?' own':'')); row.dataset.i=i; row.dataset.id=ch.id;
     const who=el('div','who'); who.dataset.i=i;
     if(master){const g=el('span','grip');g.innerHTML=ICON.grip;who.appendChild(g);}
     const av=el('span','avatar');
     av.style.background=AV[i%AV.length];
     av.textContent=(ch.name||'?').trim().charAt(0).toUpperCase();
     who.appendChild(av);
-    const nm=el('span','name'); nm.textContent=ch.name; nm.title=ch.name; who.appendChild(nm);
-    if(master){
+    const nm=el('span','name'); nm.textContent=ch.name; nm.title=ch.name+(ch.o?' — '+((mainData[ch.o]&&mainData[ch.o].nick)||PCK[ch.o].n):''); who.appendChild(nm);
+    if(canTE(ch)){
       const eb=el('button','ib'); eb.type='button'; eb.dataset.act='edit-char'; eb.dataset.id=ch.id;
       eb.setAttribute('aria-label','Изменить персонажа'); eb.innerHTML=ICON.edit; who.appendChild(eb);
     }
@@ -815,6 +823,8 @@ function renderTop(){
   curLayer.hidden=(tab!=='tetris');
   const master=isMaster();
   adminBar.hidden=!master;
+  $('#playerbar').hidden=(me.role!=='player');
+  $('#playerbar [data-act="add-mine"]').innerHTML=ICON.plus+'Добавить моего персонажа';
   document.body.classList.toggle('admin',master);
   modeBtn.hidden=!me.role;
   modeBtn.innerHTML=master?'Выйти из режима мастера':ICON.lock+'Режим мастера';
@@ -847,7 +857,7 @@ function renderTop(){
   }
   hintEl.textContent=master
     ? 'Мастер: клик по пустой клетке ставит или убирает заглушку. Тяните персонажа за имя, чтобы переставить его выше или ниже. Остальное доступно как игроку.'
-    : 'Перетащите проект мышкой на свободные клетки. Во время перетаскивания правая кнопка мыши или клавиша R поворачивают проект, Esc отменяет. Чтобы вернуть проект в список, перетащите его с доски на правую часть или за пределы доски.';
+    : 'Перетащите проект мышкой на свободные клетки. На строках своих персонажей клик по пустой клетке ставит или убирает заглушку, а карандаш меняет длину линии. Во время перетаскивания правая кнопка мыши или клавиша R поворачивают проект, Esc отменяет. Чтобы вернуть проект в список, перетащите его с доски на правую часть или за пределы доски.';
 }
 
 function busy(){return !!((drag&&drag.active)||(rdrag&&rdrag.active));}
@@ -1022,14 +1032,15 @@ function onConnected(){
 /* ---------- запись в базу: мастер ---------- */
 function saveChar(id,name,len){
   const st=cloneState(state), u={};
-  let key=id;
+  let key=id; const isNew=!key;
   if(!key){
     key=R('board/chars').push().key;
     st.chars.push({id:key,name,len,order:maxOrder(st.chars)+1});
   }
   const c=st.chars.find(x=>x.id===key);
   c.name=name; c.len=len;
-  u['chars/'+key]={name,len,order:c.order};
+  if(isNew) u['chars/'+key]={name,len,order:c.order};
+  else{u['chars/'+key+'/name']=name;u['chars/'+key+'/len']=len;}
   for(const k of Object.keys(st.blocks)){
     const i=k.lastIndexOf(':'), cid=k.slice(0,i), col=+k.slice(i+1);
     if(cid===key&&col>=len){delete st.blocks[k];u['blocks/'+key+'/c'+col]=null;}
@@ -1038,6 +1049,19 @@ function saveChar(id,name,len){
   un.forEach(pid=>{u['projects/'+pid+'/at']=null;});
   R('board').update(u);
   return un.length;
+}
+const normName=n=>String(n||'').trim().toLowerCase();
+const nameTaken=(name,exceptId)=>state.chars.some(c=>c.id!==exceptId&&normName(c.name)===normName(name));
+const canTE=ch=>!!(db&&me.role&&ch&&(isMaster()||(me.role==='player'&&ch.o===me.color)));
+// игрок добавляет своего персонажа с «Главной»; ключ записи зависит от персонажа, поэтому дубль невозможен
+function addMyChar(mid,len){
+  if(!db||me.role!=='player') return 'no';
+  const d=mainData[me.color], c=d&&d.chars.find(x=>x.id===mid); if(!c) return 'no';
+  const name=charName(d,mid), mk=mid||'0';
+  if(state.chars.some(x=>(x.o===me.color&&x.m===mk)||normName(x.name)===normName(name))) return 'dup';
+  R('board/chars/m'+me.color+'_'+mk).transaction(cur=>cur?undefined:{name,len,order:maxOrder(state.chars)+1,o:me.color,m:mk},
+    (err,ok)=>{if(!err&&!ok) toast('Этот персонаж уже на доске');});
+  return 'ok';
 }
 function deleteChar(id){
   const st=cloneState(state), u={};
@@ -1432,18 +1456,48 @@ function entryModal(){
   },{locked:true,noFocus:true});
 }
 
+function mineModal(){
+  if(me.role!=='player') return;
+  const data={len:5};
+  openModal((m,close)=>{
+    const d=mainData[me.color];
+    m.innerHTML='<h3>Добавить моего персонажа</h3>'
+      +'<p class="muted" style="margin:0 0 10px">Персонажи берутся с вкладки «Главная». Один персонаж добавляется только один раз.</p>'
+      +'<label class="l">Длина линии, клеток</label>'
+      +'<div class="stepper"><button class="btn" type="button" id="cf-minus" aria-label="Меньше">−</button><output id="cf-len">'+data.len+'</output><button class="btn" type="button" id="cf-plus" aria-label="Больше">+</button></div>'
+      +'<div class="mlist" id="mlist" style="display:flex;flex-direction:column;gap:8px;margin:14px 0"></div>'
+      +'<div class="mactions"><button class="btn" type="button" id="cf-x">Закрыть</button></div>';
+    const lenOut=m.querySelector('#cf-len'), list=m.querySelector('#mlist');
+    m.querySelector('#cf-minus').onclick=()=>{if(data.len>1){data.len--;lenOut.textContent=data.len;}};
+    m.querySelector('#cf-plus').onclick=()=>{if(data.len<14){data.len++;lenOut.textContent=data.len;}};
+    m.querySelector('#cf-x').onclick=close;
+    d.chars.forEach(c=>{
+      const name=charName(d,c.id), mk=c.id||'0';
+      const on=state.chars.some(x=>(x.o===me.color&&x.m===mk)||normName(x.name)===normName(name));
+      const row=el('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px';
+      const t=el('span'); t.textContent=name; row.appendChild(t);
+      const b=el('button','btn'+(on?'':' primary')); b.type='button'; b.textContent=on?'Уже на доске':'Добавить'; b.disabled=on;
+      b.onclick=()=>{const r=addMyChar(c.id,data.len); if(r==='dup') toast('Этот персонаж уже на доске'); else if(r==='ok') close();};
+      row.appendChild(b); list.appendChild(row);
+    });
+    if(!d.chars.length) list.textContent='На вкладке «Главная» у вас ещё нет персонажей.';
+  });
+}
+
 function charModal(id){
   const ch=id?cById(id):null, isNew=!ch;
+  if(ch&&!canTE(ch)) return;
+  const lockName=!!(ch&&ch.o&&!isMaster());
   const data={name:ch?ch.name:'',len:ch?ch.len:5};
   openModal((m,close)=>{
     m.innerHTML='<h3>'+(isNew?'Новый персонаж':'Персонаж')+'</h3>'
       +'<label class="l" for="cf-name">Имя</label>'
-      +'<input id="cf-name" type="text" maxlength="40" autocomplete="off" value="'+esc(data.name)+'">'
+      +'<input id="cf-name" type="text" maxlength="40" autocomplete="off" value="'+esc(data.name)+'"'+(lockName?' disabled':'')+'>'
       +'<label class="l">Длина линии, клеток</label>'
       +'<div class="stepper"><button class="btn" type="button" id="cf-minus" aria-label="Меньше">−</button><output id="cf-len">'+data.len+'</output><button class="btn" type="button" id="cf-plus" aria-label="Больше">+</button></div>'
       +'<div class="mactions"><button class="btn primary" type="button" id="cf-ok">Сохранить</button>'
       +'<button class="btn" type="button" id="cf-x">Отмена</button><span class="spacer"></span>'
-      +(isNew?'':'<button class="btn danger" type="button" id="cf-del">Удалить</button>')+'</div>';
+      +(isNew?'':'<button class="btn danger" type="button" id="cf-del">'+(lockName?'Убрать с доски':'Удалить')+'</button>')+'</div>';
     const nameIn=m.querySelector('#cf-name'), lenOut=m.querySelector('#cf-len');
     m.querySelector('#cf-minus').onclick=()=>{if(data.len>1){data.len--;lenOut.textContent=data.len;}};
     m.querySelector('#cf-plus').onclick=()=>{if(data.len<14){data.len++;lenOut.textContent=data.len;}};
@@ -1451,6 +1505,7 @@ function charModal(id){
     m.querySelector('#cf-ok').onclick=()=>{
       const name=nameIn.value.trim();
       if(!name){nameIn.focus();toast('Введите имя персонажа');return;}
+      if(nameTaken(name,ch?ch.id:null)){nameIn.focus();toast('Персонаж с таким именем уже есть на доске');return;}
       const n=saveChar(ch?ch.id:null,name,data.len);
       close();
       if(n) toast('Проектов вернулось в список, потому что они больше не помещаются: '+n);
@@ -2594,6 +2649,7 @@ document.addEventListener('click',e=>{
   else if(act==='reset-proj') arm(b,()=>{selected=null;resetProjects();toast('Все проекты вернулись в список');});
   else if(act==='reset-blocks') arm(b,()=>{resetBlocks();toast('Все заглушки удалены');});
   else if(act==='edit-char') charModal(b.dataset.id);
+  else if(act==='add-mine') mineModal();
   else if(act==='edit-proj') projectModal(pid);
   else if(act==='info') togglePop(b,pid);
   else if(act==='rot') rotateProject(pid);
@@ -2601,10 +2657,10 @@ document.addEventListener('click',e=>{
 });
 
 boardEl.addEventListener('click',e=>{
-  if(!isMaster()||!db) return;
+  if(!db) return;
   const cell=e.target.closest('.cell');
   if(!cell||cell.dataset.pid) return;
-  const ch=state.chars[+cell.dataset.r]; if(!ch) return;
+  const ch=state.chars[+cell.dataset.r]; if(!canTE(ch)) return;
   toggleBlock(ch.id,+cell.dataset.c);
 });
 
@@ -2684,7 +2740,7 @@ function start(){
 }
 
 window.__pb={
-  get state(){return state;}, get me(){return me;}, get presence(){return presence;}, get main(){return mainData;}, get cyc(){return cyc;}, get cal(){return calData;}, get loot(){return loot;}, get reqs(){return reqs;}, setTab,
+  get state(){return state;}, get me(){return me;}, get presence(){return presence;}, get main(){return mainData;}, get cyc(){return cyc;}, get cal(){return calData;}, get loot(){return loot;}, get reqs(){return reqs;}, setTab, addMyChar,
   placeProject,saveChar,saveProject,reorderChars,seedExample,pickColor,becomeMaster,toggleBlock,rotateProject,unplace
 };
 start();
