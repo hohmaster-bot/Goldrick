@@ -394,7 +394,6 @@ button.ck-b:hover{background:var(--surface-2)}
 <nav class="tabs" role="tablist" aria-label="Разделы">
   <button class="tab" type="button" role="tab" data-tab="main">Главная</button>
   <button class="tab" type="button" role="tab" data-tab="calendar">Календарь</button>
-  <button class="tab" type="button" role="tab" data-tab="tetris">Тетрис</button>
   <button class="tab" type="button" role="tab" data-tab="loot">Лут</button>
   <button class="tab" type="button" role="tab" data-tab="wiki">Вики</button>
   <button class="tab" type="button" role="tab" data-tab="req">Заявки</button>
@@ -485,7 +484,7 @@ button.ck-b:hover{background:var(--surface-2)}
   <div id="reqBody"></div>
 </section>
 
-<section id="tab-tetris" hidden>
+<section id="tab-tetris" hidden style="display:none!important">
 <div class="adminbar" id="adminbar" hidden>
   <span class="lbl">Мастер</span>
   <button class="btn primary" type="button" data-act="add-char"></button>
@@ -572,7 +571,7 @@ let state={chars:[],blocks:{},projects:[]};   // доска (общая для �
 let presence={};                              // курсоры
 let colorsTaken={};                           // занятые цвета
 let loaded=false, online=false, pending=false, selected=null;
-const TABS=['main','calendar','tetris','loot','wiki','req'];
+const TABS=['main','calendar','loot','wiki','req'];
 let tab='main';                               // вкладка: 'main', 'calendar' или 'tetris'
 const TIERS=5;
 const cellMap=new Map();
