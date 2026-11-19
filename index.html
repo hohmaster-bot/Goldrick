@@ -199,7 +199,7 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 
 /* главная таблица */
 .mwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
-.mt{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1971px;font-size:13px}
+.mt{border-collapse:collapse;table-layout:fixed;width:100%;min-width:1721px;font-size:13px}
 .mt th{background:var(--surface-2);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 6px;border:1px solid var(--line);text-align:center}
 .mt td{border:1px solid var(--line);padding:6px 8px;vertical-align:middle}
 .mt th:first-child,.mt td:first-child{border-left:0}
@@ -235,6 +235,7 @@ input.m-sq{width:34px;flex:none;text-align:center;border:1px solid var(--line);b
 .lens.warn .tx,.lens.warn input.m-sq{color:var(--court-red)}
 .lens.done .tx,.lens.done input.m-sq{color:var(--lens-ok)}
 .lsep{color:var(--muted);flex:none}
+.risk{flex:none;color:var(--court-red);font-weight:800;font-size:16px;line-height:1;padding:0 5px;cursor:help}
 .chk{margin-top:18px}
 .chk h2{font:600 13px var(--font-display);margin:0 0 8px}
 .ck{border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px}
@@ -248,6 +249,21 @@ button.ck-b{cursor:pointer}
 button.ck-b:hover{background:var(--surface-2)}
 .ck-b svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 .ck-b.no{opacity:.55}
+.mbar{display:flex;align-items:center;gap:12px;margin:0 0 10px}
+.lenses{margin-top:22px}
+.lhead{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px;margin:0 0 8px}
+.lhead h2{font:600 13px var(--font-display);margin:0}
+.lctl{display:flex;align-items:center;gap:8px}
+.mwrap>.ck{border:0;border-radius:0}
+.lwrap{max-width:780px}
+.lt{width:100%}
+.lt th,.lt td{text-align:left}
+.lt td.nm{min-width:220px}
+.lt td.nu{white-space:nowrap}
+.lt td.nu .ent{display:inline-flex}
+.lt td.pl2{white-space:nowrap}
+.lt td.ic{width:44px;text-align:center}
+.lt .ent{margin:0}
 .legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 2px 0;font-size:12px;color:var(--fg)}
 .lg.hotc{color:var(--court-red)}
 .lg.strongc{font-weight:700}
@@ -286,10 +302,17 @@ button.ck-b:hover{background:var(--surface-2)}
     <button class="btn" type="button" id="cEnd">Завершение цикла</button>
     <span class="pill" id="cState"></span>
   </div>
+  <div class="mbar" id="mbar" hidden>
+    <button class="btn" type="button" id="editBtn"></button>
+  </div>
   <div class="mwrap"><table class="mt" id="mt"></table></div>
   <section class="chk" id="chk" hidden>
     <h2>Обработка цикла</h2>
     <div class="mwrap"><table class="ck" id="ck"></table></div>
+  </section>
+  <section class="lenses" id="lenses">
+    <div class="lhead"><h2>Линзы</h2><span class="lctl" id="lctl"></span></div>
+    <div class="mwrap lwrap"><table class="ck lt" id="lt"></table></div>
   </section>
   <p class="legend">
     <span class="lg"><b>Дворы:</b> обычный</span>
@@ -642,12 +665,15 @@ function renderTop(){
   adminBar.querySelector('[data-act="add-char"]').innerHTML=ICON.plus+'Персонаж';
   adminBar.querySelector('[data-act="add-proj"]').innerHTML=ICON.plus+'Проект';
   $('#madmin').hidden=!master;
+  $('#mbar').hidden=!me.role;
+  $('#editBtn').innerHTML=editMode?ICON.check+'Готово':ICON.edit+'Редактировать';
+  $('#editBtn').classList.toggle('primary',editMode);
   $('#cStart').disabled=cyc.open;
   $('#cState').textContent=cyc.open?'Идёт обработка цикла':'Цикл не запущен';
   $('#mhint').textContent=master
-    ? 'Мастер может править все строки и очищать их. Кнопка «О» отключает двор, «×» удаляет. Линза зеленеет, когда достигла цели, и краснеет на нуле. Красную линзу удаляет только мастер.'
+    ? 'Нажмите «Редактировать», чтобы править любые строки и очищать их. В этом режиме «О» отключает двор, «×» удаляет. Красную линзу удаляет только мастер.'
     : (me.role
-        ? 'Вы правите только свою строку (рядом с ником цветной кружок). Остальные строки видны всем, но изменить их нельзя. Кнопка «О» отключает двор, «×» удаляет.'
+        ? 'Чтобы изменить свою строку (рядом с ником цветной кружок), нажмите «Редактировать». В этом режиме «+» добавляет, «О» отключает двор, «×» удаляет. Свою линзу вы ведёте в разделе «Линзы». Чужие строки видны всем, но изменить их нельзя.'
         : '');
   connEl.className='pill'+(online?' on':'');
   connTxt.textContent=online?'Онлайн':(db?'Нет связи':'Не подключено');
@@ -739,7 +765,7 @@ function assertPresence(){
   if(me.role==='player') R('colors/'+me.color).onDisconnect().remove();
 }
 function enterRole(role,color){
-  me.role=role; me.color=color||null; me.vis=true;
+  me.role=role; me.color=color||null; me.vis=true; editMode=false;
   closeModal(); assertPresence(); render();
 }
 function pickColor(k){
@@ -762,7 +788,7 @@ function becomeMaster(){
 }
 function leaveMaster(){
   if(db) R('presence/'+me.id).remove();
-  me.role=null; me.color=null; selected=null;
+  me.role=null; me.color=null; selected=null; editMode=false;
   render(); entryModal();
 }
 function onConnected(){
@@ -1310,7 +1336,7 @@ function parseMain(val){
         id,n:String((s&&s.n)||''),p:numOrNull(s&&s.p),c:String((s&&s.c)||'')
       })).sort(byId),
       lenses:Object.entries(r.lenses||{}).map(([id,l])=>({
-        id,n:String((l&&l.n)||''),v:numOrNull(l&&l.v),g:numOrNull(l&&l.g)
+        id,n:String((l&&l.n)||''),v:numOrNull(l&&l.v),g:numOrNull(l&&l.g),d:String((l&&l.d)||'')
       })).sort(byId),
       courts
     };
@@ -1322,9 +1348,10 @@ function parseCycle(m){
 }
 let mainData=parseMain(null), cyc=parseCycle(null);
 const CHECKS=['Спишите линзу на 1, если она не росла','Расход и доход денег','Обработайте ОТ и заживление травм','Обработайте Активацию постоянных бонусов/базы','Получите внимание'];
-let mainPending=false, ptrDown=false, focusNext=null;
+let mainPending=false, ptrDown=false, focusNext=null, editMode=false, lensTarget='blue';
 
 const canEdit=k=>!!(db&&me.role&&(isMaster()||me.color===k));
+const editing=k=>editMode&&canEdit(k);
 const MP=k=>'board/main/'+k;
 function mset(k,path,v){if(canEdit(k)) R(MP(k)+'/'+path).set(v);}
 function addItem(k,path){
@@ -1380,7 +1407,7 @@ function addBtn(title,fn){
 }
 
 function mainRow(pc){
-  const k=pc.k, d=mainData[k], ed=canEdit(k);
+  const k=pc.k, d=mainData[k], ed=editing(k);
   const tr=el('tr',(me.color===k&&!isMaster())?'mine':'');
   const courtsAll=[]; d.courts.forEach((arr,i)=>arr.forEach(c=>courtsAll.push({t:i+1,c})));
   const courtById=id=>courtsAll.find(x=>x.c.id===id);
@@ -1394,7 +1421,7 @@ function mainRow(pc){
   wrap.appendChild(dot);
   wrap.appendChild(ed?mInput(d.nick,'Ник',v=>mset(k,'nick',v)):mText(d.nick));
   td.appendChild(wrap);
-  if(isMaster()){
+  if(isMaster()&&editMode){
     const cb=mBtn('Очистить','wide','Очистить всю строку',()=>confirmBtn(cb,()=>clearRow(k)));
     td.appendChild(cb);
   }
@@ -1413,9 +1440,13 @@ function mainRow(pc){
   d.stories.forEach(s=>{
     const cur=courtById(s.c);
     const row=el('div','ent');
+    // риск: остаток истории не больше уровня связанного двора, при следующем списании она кончится
+    const risk=!!(cur&&s.p!==null&&cur.c.l!==null&&cur.c.l>0&&s.p<=cur.c.l);
+    const mkRisk=()=>{const r=el('span','risk');r.textContent='!';r.title='РИСК ПОТЕРИ ИСТОРИИ!';r.setAttribute('aria-label','РИСК ПОТЕРИ ИСТОРИИ!');return r;};
     if(ed){
       row.appendChild(mInput(s.n,'История',v=>mset(k,'stories/'+s.id+'/n',v),s.id));
       row.appendChild(mNum(s.p,'0',v=>mset(k,'stories/'+s.id+'/p',v)));
+      if(risk) row.appendChild(mkRisk());
       const sel=el('select','m-sel'); sel.setAttribute('aria-label','Связанный двор');
       sel.appendChild(new Option('— двор —',''));
       courtsAll.forEach(x=>sel.appendChild(new Option('T'+x.t+' '+(x.c.n||'без названия'),x.c.id)));
@@ -1429,6 +1460,7 @@ function mainRow(pc){
       if(s.p!==null) parts.push(String(s.p));
       if(cur) parts.push('['+(cur.c.n||'двор')+']');
       row.appendChild(mText(parts.filter(Boolean).join(' ')));
+      if(risk) row.appendChild(mkRisk());
     }
     td.appendChild(row);
   });
@@ -1460,27 +1492,6 @@ function mainRow(pc){
     tr.appendChild(cell);
   });
 
-  // линзы
-  td=el('td','ln');
-  d.lenses.forEach(l=>{
-    const row=el('div','ent lens '+lensCls(l));
-    if(ed){
-      const base='lenses/'+l.id;
-      row.appendChild(mInput(l.n,'Линза',v=>mset(k,base+'/n',v),l.id));
-      row.appendChild(mNum(l.v,'0',v=>mset(k,base+'/v',v)));
-      const sep=el('span','lsep'); sep.textContent='/'; row.appendChild(sep);
-      row.appendChild(mNum(l.g,'цель',v=>mset(k,base+'/g',v)));
-      if(canDelLens(k,l)){
-        const xb=mBtn('×','','Удалить линзу',()=>confirmBtn(xb,()=>{if(canDelLens(k,l)) mset(k,base,null);}));
-        row.appendChild(xb);
-      }
-    }else{
-      row.appendChild(mText((l.n+(l.v!==null?' '+l.v:'')+(l.g!==null?' / '+l.g:'')).trim()));
-    }
-    td.appendChild(row);
-  });
-  if(ed) td.appendChild(addBtn('Добавить линзу',()=>addItem(k,'lenses')));
-  tr.appendChild(td);
   return tr;
 }
 // зелёная: достигла цели; красная: дошла до нуля. Больше никакой автоматики.
@@ -1494,16 +1505,17 @@ function lensCls(l){
 function canDelLens(k,l){
   if(isMaster()) return true;
   if(!canEdit(k)) return false;
-  return lensCls(l)==='done'||(!l.n&&l.v===null&&l.g===null);
+  return lensCls(l)==='done'||(!l.n&&l.v===null&&l.g===null&&!l.d);
 }
 
 /* ---------- цикл и чекбоксы ---------- */
-function activePlayers(){
-  return PCOLORS.filter(pc=>{
-    const d=mainData[pc.k];
-    return d.nick||d.ch||d.lv!==null||d.stories.length||d.lenses.length||d.courts.some(a=>a.length);
-  });
+function hasData(k){
+  const d=mainData[k];
+  return !!(d.nick||d.ch||d.lv!==null||d.stories.length||d.lenses.length||d.courts.some(a=>a.length));
 }
+const activePlayers=()=>PCOLORS.filter(pc=>hasData(pc.k));
+// строка показывается, пока цвет занят игроком или в ней есть записи; пустой свободный цвет скрыт у всех, включая мастера
+const visibleColors=()=>PCOLORS.filter(pc=>colorsTaken[pc.k]||hasData(pc.k));
 function toggleCheck(k,i){
   if(!cyc.open||!canEdit(k)) return;
   const on=!!(cyc.checks[k]&&cyc.checks[k]['i'+i]);
@@ -1559,26 +1571,116 @@ function endCycle(){
   toast('Цикл завершён. Мощь списана у историй: '+sN);
 }
 
+/* ---------- линзы: общий список под таблицей ---------- */
+function addLens(k){addItem(k,'lenses');}
+function lensModal(k,id){
+  const l=mainData[k].lenses.find(x=>x.id===id); if(!l) return;
+  const ed=canEdit(k), pc=PCK[k];
+  openModal((m,close)=>{
+    m.innerHTML='<h3>'+esc(l.n||'Линза')+'</h3><p class="note">Владелец: '+esc(mainData[k].nick||pc.n)+'</p>';
+    if(ed){
+      const lab=el('label','l'); lab.textContent='Описание линзы'; lab.htmlFor='ld-t';
+      const ta=el('textarea'); ta.id='ld-t'; ta.rows=6; ta.maxLength=2000; ta.value=l.d;
+      const act=el('div','mactions');
+      const ok=el('button','btn primary'); ok.type='button'; ok.textContent='Сохранить';
+      const no=el('button','btn'); no.type='button'; no.textContent='Отмена';
+      ok.onclick=()=>{mset(k,'lenses/'+id+'/d',ta.value.trim()||null);close();};
+      no.onclick=close;
+      act.appendChild(ok); act.appendChild(no);
+      m.appendChild(lab); m.appendChild(ta); m.appendChild(act);
+    }else{
+      const p=el('p'); p.style.whiteSpace='pre-wrap'; p.textContent=l.d||'Описания пока нет.';
+      m.appendChild(p);
+      const act=el('div','mactions'), no=el('button','btn'); no.type='button'; no.textContent='Закрыть'; no.onclick=close;
+      act.appendChild(no); m.appendChild(act);
+    }
+  });
+}
+function renderLenses(){
+  const t=$('#lt'), ctl=$('#lctl'); t.innerHTML=''; ctl.innerHTML='';
+  if(me.role){
+    if(isMaster()){
+      const sel=el('select','m-sel'); sel.setAttribute('aria-label','Для какого игрока создать линзу');
+      const vc=visibleColors();
+      vc.forEach(pc=>sel.appendChild(new Option(mainData[pc.k].nick||pc.n,pc.k)));
+      if(!vc.some(pc=>pc.k===lensTarget)&&vc.length) lensTarget=vc[0].k;
+      sel.value=lensTarget; sel.onchange=()=>{lensTarget=sel.value;};
+      ctl.appendChild(sel);
+    }
+    const b=el('button','btn primary'); b.type='button'; b.innerHTML=ICON.plus+'Создать';
+    b.onclick=()=>addLens(isMaster()?lensTarget:me.color);
+    ctl.appendChild(b);
+  }
+  const all=[]; PCOLORS.forEach(pc=>mainData[pc.k].lenses.forEach(l=>all.push({pc,l})));
+  if(!all.length){
+    t.innerHTML='<tbody><tr><td>Линз пока нет.'+(me.role?' Нажмите «Создать».':'')+'</td></tr></tbody>';
+    return;
+  }
+  const th=el('thead'); th.innerHTML='<tr><th>Игрок</th><th>Линза</th><th>Значение</th><th></th><th></th></tr>';
+  t.appendChild(th);
+  const tb=el('tbody');
+  all.forEach(({pc,l})=>{
+    const k=pc.k, ed=canEdit(k);
+    const tr=el('tr','lens '+lensCls(l));
+    let td=el('td','pl2'); const dot=el('span','pdot'); dot.style.background=pc.v; dot.title=pc.n;
+    td.appendChild(dot); td.appendChild(document.createTextNode(' '+(mainData[k].nick||pc.n))); tr.appendChild(td);
+    td=el('td','nm');
+    td.appendChild(ed?mInput(l.n,'Название линзы',v=>mset(k,'lenses/'+l.id+'/n',v),l.id):mText(l.n));
+    tr.appendChild(td);
+    td=el('td','nu'); const nu=el('div','ent');
+    if(ed){
+      nu.appendChild(mNum(l.v,'0',v=>mset(k,'lenses/'+l.id+'/v',v)));
+      const sep=el('span','lsep'); sep.textContent='/'; nu.appendChild(sep);
+      nu.appendChild(mNum(l.g,'цель',v=>mset(k,'lenses/'+l.id+'/g',v)));
+    }else{
+      nu.appendChild(mText((l.v!==null?l.v:'—')+' / '+(l.g!==null?l.g:'—')));
+    }
+    td.appendChild(nu); tr.appendChild(td);
+    td=el('td','ic');
+    const ib=el('button','ib info'); ib.type='button'; ib.textContent='i'; ib.title='Описание линзы'; ib.setAttribute('aria-label','Описание линзы');
+    ib.onclick=()=>lensModal(k,l.id);
+    td.appendChild(ib); tr.appendChild(td);
+    td=el('td','ic');
+    if(editMode&&canDelLens(k,l)){
+      const xb=mBtn('×','','Удалить линзу',()=>confirmBtn(xb,()=>{if(canDelLens(k,l)) mset(k,'lenses/'+l.id,null);}));
+      td.appendChild(xb);
+    }
+    tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+$('#editBtn').addEventListener('click',()=>{
+  if(!me.role) return;
+  editMode=!editMode; focusNext=null;
+  renderMain(); renderTop();
+});
+
 function renderMain(){
   mainPending=false;
   const tbl=$('#mt');
   tbl.innerHTML='<colgroup><col style="width:140px"><col style="width:120px"><col style="width:56px"><col style="width:330px">'
-    +Array.from({length:TIERS},()=>'<col style="width:215px">').join('')+'<col style="width:250px"></colgroup>'
-    +'<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th><th rowspan="2">Линзы</th></tr><tr>'
+    +Array.from({length:TIERS},()=>'<col style="width:215px">').join('')+'</colgroup>'
+    +'<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th></tr><tr>'
     +Array.from({length:TIERS},(_,i)=>'<th>T'+(i+1)+'</th>').join('')+'</tr></thead>';
   const tb=el('tbody');
-  PCOLORS.forEach(pc=>tb.appendChild(mainRow(pc)));
+  const vis=visibleColors();
+  vis.forEach(pc=>tb.appendChild(mainRow(pc)));
+  if(!vis.length){
+    const tr=el('tr'), td=el('td'); td.colSpan=4+TIERS; td.textContent='Пока никто не вошёл.'; tr.appendChild(td); tb.appendChild(tr);
+  }
   tbl.appendChild(tb);
   renderChecks();
+  renderLenses();
   if(focusNext){
-    const n=tbl.querySelector('[data-fid="'+focusNext+'"]'); focusNext=null;
+    const n=$('#tab-main').querySelector('[data-fid="'+focusNext+'"]'); focusNext=null;
     if(n) n.focus();
   }
 }
 // не перерисовываем таблицу, пока человек печатает или держит кнопку мыши, чтобы не сбить ввод и клик
 function renderMainSafe(){
   const a=document.activeElement;
-  const typing=a&&a.closest&&a.closest('#mt')&&(a.tagName==='INPUT'||a.tagName==='SELECT');
+  const typing=a&&a.closest&&a.closest('#tab-main')&&(a.tagName==='INPUT'||a.tagName==='SELECT'||a.tagName==='TEXTAREA');
   if(typing||ptrDown){mainPending=true;return;}
   renderMain();
 }
@@ -1587,7 +1689,7 @@ document.addEventListener('pointerdown',()=>{ptrDown=true;},true);
 document.addEventListener('pointerup',()=>{ptrDown=false;flushMain();},true);
 document.addEventListener('pointercancel',()=>{ptrDown=false;flushMain();},true);
 window.addEventListener('blur',()=>{ptrDown=false;});
-$('#mt').addEventListener('focusout',flushMain);
+$('#tab-main').addEventListener('focusout',flushMain);
 
 /* ---------- вкладки ---------- */
 function setTab(t,fromHash){
