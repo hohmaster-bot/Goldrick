@@ -214,7 +214,17 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .mt tbody tr:first-child td{border-top-width:1px}
 .lt td.pc{white-space:nowrap}
 .plw{display:flex;align-items:center;gap:8px}
-.pdot{width:13px;height:13px;border-radius:50%;flex:none}
+.pdot{width:22px;height:22px;border-radius:50%;flex:none;background-size:cover;background-position:center;display:inline-block}
+.pdot.img{box-shadow:0 0 0 1px var(--line)}
+.pdot.click{cursor:pointer;box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--line)}
+.pdot.click:hover{box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--accent)}
+.pill .pdot{width:16px;height:16px}
+.lt .pdot{width:18px;height:18px;vertical-align:-4px}
+.avmenu{position:fixed;z-index:3200;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px;width:208px;display:flex;flex-direction:column;gap:10px}
+.avmenu h4{margin:0;font:600 12px var(--font-body);color:var(--muted)}
+.avmenu .swatches{gap:6px}
+.avmenu .sw{width:28px;height:28px}
+.avmenu .btn{width:100%;justify-content:center}
 .pdot.free{opacity:.35}
 .ent{display:flex;align-items:center;gap:3px;margin:2px 0;min-height:30px}
 .tx{flex:1;min-width:0;overflow-wrap:anywhere}
@@ -246,7 +256,7 @@ input.m-sq{width:34px;flex:none;text-align:center;border:1px solid var(--line);b
 .ck th,.ck td{border:1px solid var(--line);padding:7px 12px;text-align:center}
 .ck th{background:var(--surface-2);font-weight:600;font-size:12px}
 .ck td:first-child,.ck th:first-child{text-align:left}
-.ck th .pdot{display:inline-block;vertical-align:-1px;margin-right:6px}
+.ck th .pdot{display:inline-block;vertical-align:-3px;margin-right:6px;width:18px;height:18px}
 .ck th small{color:var(--muted);font-weight:600;margin-left:4px}
 .ck-b{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;border:0;background:transparent;padding:0;font:700 17px/1 var(--font-body)}
 button.ck-b{cursor:pointer}
@@ -291,7 +301,6 @@ button.ck-b:hover{background:var(--surface-2)}
   <span class="pill" id="me" hidden></span>
   <span class="counter" id="counter"></span>
   <span class="spacer"></span>
-  <button class="btn" type="button" id="changeColor" hidden>Сменить цвет</button>
   <button class="btn" type="button" id="resetColors" title="Освободить все занятые цвета. Данные игры не затрагиваются.">Сбросить цвета</button>
   <button class="btn" type="button" id="modeBtn" data-act="mode"></button>
 </div>
@@ -672,7 +681,6 @@ function renderTop(){
   adminBar.querySelector('[data-act="add-proj"]').innerHTML=ICON.plus+'Проект';
   $('#madmin').hidden=!master;
   $('#mbar').hidden=!me.role;
-  $('#changeColor').hidden=(me.role!=='player');
   $('#editBtn').innerHTML=editMode?ICON.check+'Готово':ICON.edit+'Редактировать';
   $('#editBtn').classList.toggle('primary',editMode);
   $('#cStart').disabled=cyc.open;
@@ -687,8 +695,14 @@ function renderTop(){
   if(!me.role){meEl.hidden=true;}
   else{
     meEl.hidden=false;
-    meEl.innerHTML='<span class="dot" style="background:'+(master?'var(--fg)':PCK[me.color].v)+'"></span>'
-      +(master?'Вы: мастер':'Вы: '+esc(PCK[me.color].n));
+    meEl.innerHTML='';
+    if(master){
+      const d0=el('span','dot'); d0.style.background='var(--fg)'; meEl.appendChild(d0);
+      meEl.appendChild(document.createTextNode('Вы: мастер'));
+    }else{
+      meEl.appendChild(makeDotEditable(dotEl(me.color),me.color));
+      meEl.appendChild(document.createTextNode('Вы: '+PCK[me.color].n));
+    }
   }
   hintEl.textContent=master
     ? 'Мастер: клик по пустой клетке ставит или убирает заглушку. Тяните персонажа за имя, чтобы переставить его выше или ниже. Остальное доступно как игроку.'
@@ -709,7 +723,8 @@ function flushPending(){if(pending&&!busy()) render();}
 const curNodes=new Map(), ghostNodes=new Map();
 function mkCursor(ck){
   const n=el('div','rc'); n.dataset.c=ck;
-  const fill=ck==='m'?'var(--cur-fill)':(PCK[ck]?PCK[ck].v:'#888');
+  const fill=ck==='m'?'var(--cur-fill)':colorOf(ck);
+  n.dataset.col=fill;
   const stroke=ck==='m'?'var(--cur-stroke)':'#fff';
   n.innerHTML='<svg viewBox="0 0 24 24"><path style="fill:'+fill+';stroke:'+stroke+'" stroke-width="1.6" stroke-linejoin="round" d="M3 2l7.5 18.5 2.6-7.9L21 10z"/></svg>';
   return n;
@@ -721,7 +736,7 @@ function renderCursors(){
     if(id===me.id||!p||!(p.c==='m'||PCK[p.c])) continue;
     seen.add(id);
     let n=curNodes.get(id);
-    if(n&&n.dataset.c!==p.c){n.remove();curNodes.delete(id);n=null;}
+    if(n&&(n.dataset.c!==p.c||(p.c!=='m'&&n.dataset.col!==colorOf(p.c)))){n.remove();curNodes.delete(id);n=null;}
     if(!n){n=mkCursor(p.c);curLayer.appendChild(n);curNodes.set(id,n);}
     n.hidden=(p.v===0);
     n.style.transform='translate('+(br.left+num(p.x,0)-3)+'px,'+(br.top+num(p.y,0)-2)+'px)';
@@ -805,54 +820,6 @@ function tryReset(btn){
     try{localStorage.setItem('pb-reset-at',String(resetLast));}catch(e){}
     resetColors();
   });
-}
-// смена цвета: записи игрока переезжают на новый цвет, если там пусто
-function switchColor(k){
-  if(me.role!=='player'||k===me.color||!db) return;
-  const old=me.color;
-  if(hasData(old)&&hasData(k)){toast('В «'+PCK[k].n+'» уже есть записи. Выберите другой.');return;}
-  R('colors/'+k).transaction(cur=>(cur===null||cur===me.id)?me.id:undefined,(err,ok)=>{
-    if(err){toast('Не удалось связаться с базой'+(err.code?' ('+err.code+')':''));return;}
-    if(!ok){toast('Этот цвет уже занят, выберите другой');return;}
-    const moveData=hasData(old)&&!hasData(k);
-    const finish=()=>{
-      me.color=k;
-      R('colors/'+old).onDisconnect().cancel(); R('colors/'+old).remove();
-      closeModal(); assertPresence(); render();
-      toast('Теперь вы '+PCK[k].n);
-    };
-    if(!moveData){finish();return;}
-    R(MP(old)).once('value').then(snap=>{
-      const u={}; u[old]=null; u[k]=snap.val();
-      const ck=cyc.checks[old]; if(ck){u['checks/'+old]=null;u['checks/'+k]=ck;}
-      return R('board/main').update(u);
-    }).then(finish,e=>{
-      R('colors/'+k).remove();
-      toast('Не удалось перенести записи'+(e&&e.code?' ('+e.code+')':''));
-    });
-  });
-}
-function colorModal(){
-  openModal((m,close)=>{
-    m.innerHTML='<h3>Сменить цвет</h3>'
-      +'<p class="note">Ваши записи (персонажи, истории, дворы, линзы) переедут на новый цвет, если он ещё пустой.</p>'
-      +'<div class="cpick" id="cp"></div><div class="mactions"><button class="btn" type="button" id="cc-x">Закрыть</button></div>';
-    m.querySelector('#cc-x').onclick=close;
-    const cp=m.querySelector('#cp');
-    entryRefresh=()=>{
-      cp.innerHTML='';
-      PCOLORS.forEach(c=>{
-        const mine=c.k===me.color, taken=colorsTaken[c.k]&&colorsTaken[c.k]!==me.id;
-        const full=hasData(c.k)&&hasData(me.color)&&!mine;
-        const b=el('button','cbtn'); b.type='button'; b.disabled=!!(mine||taken||full);
-        b.innerHTML='<span class="swc" style="background:'+c.v+'"></span><span>'+c.n+'</span>'
-          +(mine?'<small class="muted">ваш</small>':(taken?'<small class="muted">занят</small>':(full?'<small class="muted">есть записи</small>':(hasData(c.k)?'<small class="muted">с записями</small>':''))));
-        b.onclick=()=>switchColor(c.k);
-        cp.appendChild(b);
-      });
-    };
-    entryRefresh();
-  },{noFocus:true});
 }
 function reclaimColor(){
   R('colors/'+me.color).transaction(cur=>{
@@ -1448,6 +1415,7 @@ function parseMain(val){
       .sort(byId).forEach(c=>chars.push(c));
     out[pc.k]={
       nick:String(r.nick||''),chars,
+      avc:safeColor(r.avc,''),avi:(typeof r.avi==='string'&&r.avi.length<40000&&IMG_RE.test(r.avi))?r.avi:'',
       lenses:Object.entries(r.lenses||{}).map(([id,l])=>({
         id,n:String((l&&l.n)||''),v:numOrNull(l&&l.v),g:numOrNull(l&&l.g),d:String((l&&l.d)||''),c:String((l&&l.c)||'')
       })).sort(byId)
@@ -1458,6 +1426,7 @@ function parseMain(val){
 function parseCycle(m){
   return{open:!!(m&&m.cycle&&m.cycle.open),checks:(m&&m.checks&&typeof m.checks==='object')?m.checks:{}};
 }
+const IMG_RE=/^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/;
 let mainData=parseMain(null), cyc=parseCycle(null);
 const CHECKS=['Спишите линзу на 1, если она не росла','Расход и доход денег','Обработайте ОТ и заживление травм','Обработайте Активацию постоянных бонусов/базы','Получите внимание'];
 let mainPending=false, ptrDown=false, focusNext=null, editMode=false, lensTarget='blue';
@@ -1496,6 +1465,79 @@ const charName=(d,cid)=>{
   return d.chars[i].ch||(i?'Персонаж '+(i+1):'Персонаж');
 };
 function clearRow(k){if(isMaster()&&db) R(MP(k)).remove();}
+
+/* ---------- кружок игрока: цвет или картинка ---------- */
+const AVC=['#2F6FED','#E5484D','#F2B705','#22A559','#F08A24','#8A5CD0','#C44E94','#1F8FA6','#6B7A8F','#7A4B2A','#111827','#14B8A6','#84CC16','#0EA5E9','#E879F9'];
+function colorOf(k){const d=mainData[k];return (d&&d.avc)||(PCK[k]?PCK[k].v:'#888');}
+function dotEl(k,cls){
+  const d=mainData[k], n=el('span','pdot'+(cls?' '+cls:''));
+  if(d&&d.avi){n.classList.add('img');n.style.backgroundImage='url("'+d.avi+'")';}
+  else n.style.background=colorOf(k);
+  return n;
+}
+function makeDotEditable(n,k){
+  if(!canEdit(k)) return n;
+  n.classList.add('click'); n.tabIndex=0; n.setAttribute('role','button');
+  n.title='Изменить цвет или картинку';
+  n.setAttribute('aria-label','Изменить цвет или картинку');
+  n.addEventListener('click',e=>{e.stopPropagation();avMenu(n,k);});
+  n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();avMenu(n,k);}});
+  return n;
+}
+let avEl=null;
+function closeAv(){if(avEl){avEl.remove();avEl=null;}}
+function avMenu(anchor,k){
+  const reopen=avEl&&avEl.dataset.k===k&&avEl._a===anchor;
+  closeAv(); if(reopen) return;
+  const m=el('div','avmenu'); m.dataset.k=k; m._a=anchor;
+  const h=el('h4'); h.textContent='Цвет кружка'; m.appendChild(h);
+  const sw=el('div','swatches');
+  AVC.forEach(c=>{
+    const b=el('button','sw'+(mainData[k].avc===c&&!mainData[k].avi?' on':'')); b.type='button'; b.style.background=c;
+    b.setAttribute('aria-label','Цвет '+c);
+    b.onclick=()=>{R(MP(k)).update({avc:c,avi:null});closeAv();};
+    sw.appendChild(b);
+  });
+  m.appendChild(sw);
+  const pic=el('button','btn'); pic.type='button'; pic.textContent='Своя картинка…';
+  pic.onclick=()=>{closeAv();pickImage(k);};
+  const rst=el('button','btn'); rst.type='button'; rst.textContent='Вернуть по умолчанию';
+  rst.onclick=()=>{R(MP(k)).update({avc:null,avi:null});closeAv();};
+  m.appendChild(pic); m.appendChild(rst);
+  document.body.appendChild(m); avEl=m;
+  const r=anchor.getBoundingClientRect(), mw=m.offsetWidth, mh=m.offsetHeight;
+  let x=Math.max(8,Math.min(window.innerWidth-mw-8,r.left)), y=r.bottom+8;
+  if(y+mh>window.innerHeight-8) y=Math.max(8,r.top-mh-8);
+  m.style.left=x+'px'; m.style.top=y+'px';
+}
+document.addEventListener('pointerdown',e=>{if(avEl&&!e.target.closest('.avmenu')&&!e.target.closest('.pdot.click')) closeAv();},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeAv();});
+// картинка сжимается до 96×96, чтобы не раздувать базу
+function pickImage(k){
+  if(!canEdit(k)) return;
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/png,image/jpeg,image/webp,image/gif'; inp.hidden=true;
+  document.body.appendChild(inp);
+  inp.onchange=()=>{
+    const f=inp.files&&inp.files[0]; inp.remove();
+    if(!f) return;
+    if(f.size>8*1024*1024){toast('Файл слишком большой, выберите поменьше (до 8 МБ)');return;}
+    const rd=new FileReader();
+    rd.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const S=96, c=document.createElement('canvas'); c.width=S; c.height=S;
+        const g=c.getContext('2d'), side=Math.min(img.width,img.height);
+        g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);
+        R(MP(k)).update({avi:c.toDataURL('image/jpeg',0.82),avc:null});
+        toast('Картинка обновлена');
+      };
+      img.onerror=()=>toast('Не удалось открыть эту картинку');
+      img.src=rd.result;
+    };
+    rd.readAsDataURL(f);
+  };
+  inp.click();
+}
 
 /* ---------- всплывающая подсказка (появляется сразу, работает и по клику) ---------- */
 let tipEl=null;
@@ -1572,8 +1614,9 @@ function charRow(pc,d,ch,idx,n){
   if(idx===0){
   td=el('td','pl'); td.rowSpan=n;
   const wrap=el('div','plw');
-  const dot=el('span','pdot'+(colorsTaken[k]?'':' free')); dot.style.background=pc.v;
+  const dot=dotEl(k,colorsTaken[k]?'':'free');
   dot.title=pc.n+(colorsTaken[k]?'':' (цвет не занят)');
+  makeDotEditable(dot,k);
   wrap.appendChild(dot);
   wrap.appendChild(ed?mInput(d.nick,'Ник',v=>mset(k,'nick',v)):mText(d.nick));
   td.appendChild(wrap);
@@ -1695,7 +1738,7 @@ function renderChecks(){
   const head=el('tr'), h0=el('th'); h0.textContent='Пункт'; head.appendChild(h0);
   pl.forEach(pc=>{
     const d=mainData[pc.k], got=CHECKS.filter((_,i)=>cyc.checks[pc.k]&&cyc.checks[pc.k]['i'+i]).length;
-    const th=el('th'), dot=el('span','pdot'); dot.style.background=pc.v;
+    const th=el('th'), dot=dotEl(pc.k);
     th.appendChild(dot); th.appendChild(document.createTextNode(d.nick||pc.n));
     const sm=el('small'); sm.textContent=got+'/'+CHECKS.length; th.appendChild(sm);
     head.appendChild(th);
@@ -1708,7 +1751,7 @@ function renderChecks(){
       const on=!!(cyc.checks[pc.k]&&cyc.checks[pc.k]['i'+i]);
       const td=el('td'), n=el(canEdit(pc.k)?'button':'span','ck-b'+(on?'':' no'));
       if(n.tagName==='BUTTON'){n.type='button';n.onclick=()=>toggleCheck(pc.k,i);}
-      n.style.color=pc.v; n.innerHTML=on?ICON.check:'✕';
+      n.style.color=colorOf(pc.k); n.innerHTML=on?ICON.check:'✕';
       n.setAttribute('role','img'); n.setAttribute('aria-label',(on?'Отмечено: ':'Не отмечено: ')+txt);
       td.appendChild(n); tr.appendChild(td);
     });
@@ -1789,7 +1832,7 @@ function renderLenses(){
   all.forEach(({pc,l})=>{
     const k=pc.k, ed=canEdit(k);
     const tr=el('tr','lens '+lensCls(l));
-    let td=el('td','pl2'); const dot=el('span','pdot'); dot.style.background=pc.v; dot.title=pc.n;
+    let td=el('td','pl2'); const dot=dotEl(k); dot.title=pc.n; makeDotEditable(dot,k);
     td.appendChild(dot); td.appendChild(document.createTextNode(' '+(mainData[k].nick||pc.n))); tr.appendChild(td);
     td=el('td','pc');
     const dd=mainData[k], lc=dd.chars.some(c=>c.id===l.c)?l.c:'';
@@ -1881,7 +1924,6 @@ function setTab(t,fromHash){
   schedulePresence(true);
 }
 $('#resetColors').addEventListener('click',e=>tryReset(e.currentTarget));
-$('#changeColor').addEventListener('click',colorModal);
 $('#cStart').addEventListener('click',startCycle);
 $('#cEnd').addEventListener('click',e=>arm(e.currentTarget,endCycle));
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
@@ -1986,6 +2028,7 @@ function start(){
     }
     if(sm!==sigM){
       sigM=sm; mainData=parseMain(raw.main); cyc=parseCycle(raw.main);
+      renderCursors();
       if(tab==='main') renderMainSafe();
       renderTop();
     }
