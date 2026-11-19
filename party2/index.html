@@ -1,0 +1,2813 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Доска Аватюристов</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@500;600&display=swap">
+<style>
+/* Раскладка: имена персонажей слева, «тетрис» вплотную к ним, список проектов вплотную справа.
+   Холодная графитово-синяя гамма, яркие цвета только у проектов, курсоров игроков и зелёной галочки. */
+:root{
+  --font-body:"Onest",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-display:"Unbounded","Onest",system-ui,sans-serif;
+  --label:184px;
+  --bg:#ECEFF4; --surface:#FFFFFF; --surface-2:#F3F5F9; --fg:#172033; --muted:#5B677B; --line:#D3DAE5;
+  --slot:#E3E8F0; --slot-line:#C6CFDD;
+  --accent:#17687F; --accent-fg:#FFFFFF; --accent-soft:#DDECF1;
+  --ok:#16A34A; --bad:#E5484D; --warn:#F5C518; --warn-bg:#FBE9A0; --day-ok:#B8E6C4; --day-off:#DADFE8;
+  --court-off:#9AA3B2; --court-red:#D1242B; --lens-ok:#12803B;
+  --block:#1B202C; --block-line:#3B4559;
+  --cur-fill:#141922; --cur-stroke:#FFFFFF;
+  --shadow:0 8px 28px rgba(23,32,51,.16);
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F141C; --surface:#171E2A; --surface-2:#1C2433; --fg:#E7ECF4; --muted:#93A0B6; --line:#2B3648;
+    --slot:#222C3C; --slot-line:#34435B;
+    --accent:#4FB3D1; --accent-fg:#0B1620; --accent-soft:#183040;
+    --ok:#2FD16B; --bad:#FF6369; --warn:#E6B800; --warn-bg:#5C4B10; --day-ok:#1E5A33; --day-off:#232B3A; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
+    --block:#06080C; --block-line:#46536C;
+    --cur-fill:#FFFFFF; --cur-stroke:#141922;
+    --shadow:0 8px 28px rgba(0,0,0,.5);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F141C; --surface:#171E2A; --surface-2:#1C2433; --fg:#E7ECF4; --muted:#93A0B6; --line:#2B3648;
+  --slot:#222C3C; --slot-line:#34435B;
+  --accent:#4FB3D1; --accent-fg:#0B1620; --accent-soft:#183040;
+  --ok:#2FD16B; --bad:#FF6369; --warn:#E6B800; --warn-bg:#5C4B10; --day-ok:#1E5A33; --day-off:#232B3A; --court-off:#5E6B82; --court-red:#FF6B70; --lens-ok:#34D27A;
+  --block:#06080C; --block-line:#46536C;
+  --cur-fill:#FFFFFF; --cur-stroke:#141922;
+  --shadow:0 8px 28px rgba(0,0,0,.5);
+  color-scheme:dark;
+}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{
+  background:var(--bg);color:var(--fg);font:14px/1.45 var(--font-body);
+  padding-block:16px 36px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+  min-height:100vh;
+}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.muted{color:var(--muted)}
+
+/* верхняя строка */
+.top{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;margin-bottom:14px}
+h1{font:600 17px/1.2 var(--font-display);margin:0;letter-spacing:-.01em}
+h1.editable{cursor:text;border-bottom:1px dashed transparent}
+h1.editable:hover{border-bottom-color:var(--accent)}
+h1 input{font:inherit;letter-spacing:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--accent);border-radius:6px;padding:2px 6px;width:min(60vw,360px)}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:999px;padding:2px 10px;background:var(--surface)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--bad);flex:none;display:inline-block}
+.pill.on .dot{background:var(--ok)}
+.counter{font-size:13px;color:var(--muted)}
+.spacer{flex:1 1 auto}
+
+.btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.btn.danger{color:var(--bad)}
+.btn.armed{background:var(--bad);border-color:var(--bad);color:#fff}
+.btn svg,.ib svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.adminbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;margin-bottom:14px;border:1px dashed var(--accent);border-radius:12px;background:var(--accent-soft)}
+.adminbar .lbl{font-size:12px;font-weight:700;color:var(--accent);margin-right:4px;letter-spacing:.04em;text-transform:uppercase}
+
+.banner{position:fixed;left:0;right:0;top:0;z-index:2500;background:var(--bad);color:#fff;padding:10px 16px;font-weight:600;font-size:13px;text-align:center}
+
+/* сцена */
+.stage{display:flex;align-items:flex-start;gap:14px}
+.boardscroll{flex:0 1 auto;min-width:0;max-width:calc(100% - 300px);overflow-x:auto;overflow-y:hidden;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 12px 12px 8px}
+.board{position:relative;user-select:none;-webkit-user-select:none}
+#rows{position:relative}
+.row{display:flex;height:44px;position:relative;z-index:2;transition:transform .14s ease;border-radius:10px}
+.row.lifted{z-index:6;transition:none;background:var(--surface);box-shadow:var(--shadow)}
+.rowmark{position:absolute;left:0;right:0;height:44px;z-index:1;border:2px dashed var(--accent);border-radius:10px;background:var(--accent-soft);opacity:.7;pointer-events:none}
+.empty{margin:0;padding:18px;color:var(--muted);display:flex;flex-direction:column;gap:12px;align-items:flex-start}
+
+.who{width:var(--label);flex:none;height:40px;margin:2px 0;display:flex;align-items:center;gap:8px;padding:0 6px 0 10px;background:var(--surface-2);border-radius:10px 0 0 10px;border-right:3px solid var(--line);min-width:0;user-select:none}
+.admin .who{cursor:grab;touch-action:none}
+.grip{color:var(--muted);display:grid;place-items:center;flex:none}
+.grip svg{width:12px;height:16px;fill:currentColor;stroke:none}
+.avatar{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font:700 13px var(--font-body);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+.name{flex:1;min-width:0;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ib{width:26px;height:26px;border-radius:7px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer;padding:0;flex:none}
+.ib:hover{background:var(--accent-soft);color:var(--accent)}
+.ib.info{width:22px;height:22px;border-radius:50%;border:1.5px solid currentColor;font:italic 700 13px/1 Georgia,"Times New Roman",serif}
+
+.cells{display:flex}
+.cell{width:44px;height:44px;position:relative;flex:none}
+.slot{position:absolute;inset:2px;border-radius:9px;background:var(--slot);border:1px solid var(--slot-line)}
+.slot.occ{border:0}
+.slot.block{background-color:var(--block);border-color:var(--block-line);background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.09) 0 4px,transparent 4px 9px)}
+.admin .cell:not([data-pid]){cursor:pointer}
+.admin .cell:not([data-pid]):hover .slot{border-color:var(--accent)}
+.row.own .cell:not([data-pid]){cursor:pointer}
+.row.own .cell:not([data-pid]):hover .slot{border-color:var(--accent)}
+.cell[data-pid]{cursor:grab;touch-action:none}
+.cell.sel .slot{filter:brightness(1.14)}
+.cell.lifted .slot{opacity:.28}
+.cell .slot.t-ok{box-shadow:inset 0 0 0 3px var(--ok);background-color:color-mix(in srgb,var(--ok) 30%,var(--slot))}
+.cell .slot.t-bad{box-shadow:inset 0 0 0 3px var(--bad);background-color:color-mix(in srgb,var(--bad) 30%,var(--slot))}
+.cell .slot.occ.t-ok,.cell .slot.occ.t-bad{background-color:inherit}
+.ini{position:absolute;inset:0;display:grid;place-items:center;font:700 15px var(--font-body);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.4);pointer-events:none}
+@keyframes pulse{0%,100%{filter:none}50%{filter:brightness(1.4) saturate(1.2)}}
+.cell.pulse .slot{animation:pulse .6s 2}
+
+.tick{position:absolute;top:-8px;right:-8px;width:22px;height:22px;border-radius:50%;background:var(--ok);display:grid;place-items:center;z-index:3;box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 28%,transparent),0 0 12px color-mix(in srgb,var(--ok) 75%,transparent)}
+.tick svg{width:12px;height:12px;fill:none;stroke:#fff;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round}
+.cell .tick{top:-3px;right:-3px;width:16px;height:16px}
+.cell .tick svg{width:10px;height:10px}
+
+/* мини-панель выбранного проекта на доске */
+.ptool{position:absolute;z-index:5;display:flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px 4px 3px 10px;box-shadow:var(--shadow);white-space:nowrap}
+.ptool .tn{font-weight:600;font-size:12px;max-width:150px;overflow:hidden;text-overflow:ellipsis;margin-right:4px}
+
+/* правая часть: проекты */
+.panel{flex:1 1 300px;min-width:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px 16px;transition:box-shadow .15s,border-color .15s;user-select:none;-webkit-user-select:none}
+.panel.drop{border-color:var(--ok);box-shadow:0 0 0 3px color-mix(in srgb,var(--ok) 30%,transparent)}
+.phead{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:10px}
+.phead h2{font:600 13px var(--font-display);margin:0}
+.plist{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px 10px}
+.proj{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--surface-2);padding:6px 6px 8px 10px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.proj .ph{display:flex;align-items:center;gap:2px}
+.proj .pn{flex:1;min-width:0;font-weight:600;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.shapebox{display:grid;place-items:center;min-height:104px;margin-right:4px;padding:8px;border-radius:9px;background:var(--surface);border:1px dashed var(--line);cursor:grab;touch-action:none}
+.proj.placed{border-color:color-mix(in srgb,var(--ok) 55%,var(--line))}
+.proj.placed .shapebox{opacity:.4}
+.proj.held{opacity:.6}
+.proj.held .shapebox{cursor:not-allowed}
+.state{font-size:11px;font-weight:600;color:var(--muted);display:flex;align-items:center;gap:6px}
+.proj.placed .state{color:var(--ok)}
+.proj.held .state{color:var(--fg)}
+
+.shape{position:relative}
+.sl{position:absolute}
+.fill{position:absolute}
+.ghost{position:fixed;left:0;top:0;z-index:1000;pointer-events:none;opacity:.93;filter:drop-shadow(0 10px 14px rgba(0,0,0,.35))}
+.rghost{position:fixed;left:0;top:0;z-index:1400;pointer-events:none;opacity:.62;filter:drop-shadow(0 8px 12px rgba(0,0,0,.3));transition:transform .07s linear}
+.rc{position:fixed;left:0;top:0;z-index:1500;pointer-events:none;transition:transform .07s linear}
+.rc svg{display:block;width:22px;height:22px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))}
+body.dragging,body.dragging *{cursor:grabbing!important}
+
+.hint{margin:14px 0 0;color:var(--muted);font-size:13px;max-width:78ch}
+
+/* всплывающие окна */
+.pop{position:fixed;z-index:900;max-width:300px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow)}
+.pop h3{margin:0 0 6px;font:600 14px var(--font-display)}
+.pop p{margin:0;white-space:pre-wrap;font-size:13px}
+
+.overlay{position:fixed;inset:0;z-index:2000;background:rgba(8,12,20,.6);display:grid;place-items:center;padding:16px}
+.modal{background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:14px;width:min(520px,100%);max-height:calc(100% - 8px);overflow:auto;padding:18px;box-shadow:var(--shadow)}
+.modal h3{margin:0 0 4px;font:600 16px var(--font-display)}
+.modal label.l{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:14px 0 5px}
+.modal input[type=text],.modal input[type=password],.modal textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--fg)}
+.modal textarea{resize:vertical}
+.note{font-size:12px;color:var(--muted);margin:8px 0 0}
+.err{font-size:12px;color:var(--bad);margin:6px 0 0;font-weight:600}
+.mactions{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.stepper{display:flex;align-items:center;gap:10px}
+.stepper output{min-width:2ch;text-align:center;font-weight:700;font-size:18px}
+.swatches{display:flex;flex-wrap:wrap;gap:8px}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid transparent;cursor:pointer;padding:0}
+.sw.on{border-color:var(--fg);box-shadow:0 0 0 2px var(--surface) inset}
+.egrid{display:grid;grid-template-columns:repeat(8,32px);width:max-content;max-width:100%;touch-action:none;user-select:none;-webkit-user-select:none;background:var(--surface-2);border-radius:10px;padding:4px;border:1px solid var(--line)}
+.ecell{width:32px;height:32px;position:relative;cursor:pointer}
+.ecell::before{content:"";position:absolute;inset:2px;border-radius:7px;background:var(--slot);border:1px solid var(--slot-line)}
+.ecell.on::before{background:var(--pc);border-color:transparent}
+
+.cpick{display:grid;grid-template-columns:repeat(auto-fit,minmax(88px,1fr));gap:10px;margin-top:14px}
+.cbtn{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 6px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);cursor:pointer;font-weight:600;font-size:13px}
+.cbtn .swc{width:34px;height:34px;border-radius:50%}
+.cbtn:disabled{opacity:.4;cursor:not-allowed}
+.cbtn:not(:disabled):hover{border-color:var(--accent)}
+.hr{height:1px;background:var(--line);margin:18px 0 12px;border:0}
+
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:3000;background:var(--fg);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:13px;font-weight:500;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+
+/* вкладки */
+.tabs{display:flex;gap:4px;margin:0 0 14px;border-bottom:1px solid var(--line)}
+.tab{border:0;background:transparent;padding:9px 18px;font-weight:600;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-1px;border-radius:8px 8px 0 0}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* главная таблица */
+.mwrap.fit{width:fit-content;max-width:100%}
+.mwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.mt{border-collapse:collapse;table-layout:auto;width:max-content;font-size:13px}
+.mt .ent{max-width:250px}
+.mt td.rep .ent{max-width:460px}
+.mt th{background:var(--surface-2);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 10px;border:1px solid var(--line);text-align:center}
+.mt td{border:1px solid var(--line);padding:6px 10px;vertical-align:middle}
+.mt td.ct,.mt td.ch{max-width:250px}
+.mt td.pl{min-width:104px;white-space:nowrap}
+.mt td.ch{min-width:84px}
+.mt td.lv{width:1%;min-width:48px}
+.mt td.rep{min-width:170px}
+.mt td.ct{min-width:136px}
+.mt th:first-child,.mt td:first-child{border-left:0}
+.mt th:last-child,.mt td:last-child{border-right:0}
+.mt thead tr:first-child th{border-top:0}
+.mt tbody tr:last-child td{border-bottom:0}
+.mt tr.mine td{background:color-mix(in srgb,var(--accent) 7%,var(--surface))}
+.mt td.lv{text-align:center}
+.mt th:first-child,.mt td.pl{position:sticky;left:0;z-index:1}
+.mt td.pl{background:var(--surface)}
+.mt tr.pstart td{border-top-width:2px}
+.mt tbody tr:first-child td{border-top-width:1px}
+.lt td.pc{white-space:nowrap}
+.plw{display:flex;align-items:center;gap:8px}
+.pdot{width:22px;height:22px;border-radius:50%;flex:none;background-size:cover;background-position:center;display:inline-block}
+.pdot.img{box-shadow:0 0 0 1px var(--line)}
+.pdot.click{cursor:pointer;box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--line)}
+.pdot.click:hover{box-shadow:0 0 0 2px var(--surface),0 0 0 3px var(--accent)}
+.pill .pdot{width:16px;height:16px}
+.lt .pdot{width:18px;height:18px;vertical-align:-4px}
+.avmenu{position:fixed;z-index:3200;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);padding:12px;width:208px;display:flex;flex-direction:column;gap:10px}
+.avmenu h4{margin:0;font:600 12px var(--font-body);color:var(--muted)}
+.avmenu .swatches{gap:6px}
+.avmenu .sw{width:28px;height:28px}
+.avmenu .btn{width:100%;justify-content:center}
+.pdot.free{opacity:.35}
+.ent{display:flex;align-items:center;gap:3px;margin:2px 0;min-height:30px}
+.tx{flex:1;min-width:0;overflow-wrap:anywhere}
+span.tx{padding:4px 2px}
+input.m-in{field-sizing:fixed;font:inherit;color:inherit;background:transparent;border:1px solid transparent;border-radius:6px;padding:4px 6px;width:100%;min-width:0}
+input.m-in:hover{border-color:var(--line)}
+input.m-in:focus{border-color:var(--accent);background:var(--surface);outline:none}
+input.m-in::placeholder{color:var(--muted);opacity:.7}
+input.m-sq{width:34px;flex:none;text-align:center;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);font-weight:700;padding:4px 0}
+.m-sel{font:inherit;font-size:12px;width:92px;flex:none;border:1px solid var(--line);background:var(--surface-2);color:var(--fg);border-radius:6px;padding:4px 2px}
+.m-b{width:22px;height:22px;flex:none;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:700;font-size:12px;line-height:1;cursor:pointer;padding:0}
+.m-b:hover{border-color:var(--accent);color:var(--accent)}
+.m-b.on{background:var(--court-off);border-color:var(--court-off);color:#fff}
+.m-b.armed{background:var(--bad);border-color:var(--bad);color:#fff}
+.m-b.wide{width:auto;padding:0 8px;margin-top:6px}
+.m-add{display:block;width:100%;height:24px;margin-top:4px;border:1px dashed var(--line);border-radius:6px;background:transparent;color:var(--muted);cursor:pointer;font-weight:700;padding:0}
+.m-add:hover{border-color:var(--accent);color:var(--accent)}
+.court.hot .tx,.court.hot input.m-sq{color:var(--court-red)}
+.court.strong .tx{font-weight:700}
+.court.off .tx,.court.off input.m-sq{color:var(--court-off)}
+.lens.warn td.nm .tx,.lens.warn td.nu .tx,.lens.warn input.m-sq{color:var(--court-red)}
+.lens.done td.nm .tx,.lens.done td.nu .tx,.lens.done input.m-sq{color:var(--lens-ok)}
+.lsep{color:var(--muted);flex:none}
+.tip{position:fixed;z-index:3500;background:#B3261E;color:#fff;font-weight:700;font-size:12px;letter-spacing:.02em;padding:6px 10px;border-radius:8px;box-shadow:var(--shadow);pointer-events:none;max-width:260px}
+.risk{flex:none;color:var(--court-red);font-weight:800;font-size:16px;line-height:1;padding:0 5px;cursor:help}
+.chk{margin-top:18px}
+.chk h2{font:600 13px var(--font-display);margin:0 0 8px}
+.ck{border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;font-size:13px}
+.ck th,.ck td{border:1px solid var(--line);padding:7px 12px;text-align:center}
+.ck th{background:var(--surface-2);font-weight:600;font-size:12px}
+.ck td:first-child,.ck th:first-child{text-align:left}
+.ck th .pdot{display:inline-block;vertical-align:-3px;margin-right:6px;width:18px;height:18px}
+.ck th small{color:var(--muted);font-weight:600;margin-left:4px}
+.ck-b{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;border:0;background:transparent;padding:0;font:700 17px/1 var(--font-body)}
+button.ck-b{cursor:pointer}
+button.ck-b:hover{background:var(--surface-2)}
+.ck-b svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.ck-b.no{opacity:.55}
+.mbar{display:flex;align-items:center;gap:12px;margin:0 0 10px}
+.lenses{margin-top:22px}
+.lhead{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px;margin:0 0 8px}
+.lhead h2{font:600 13px var(--font-display);margin:0}
+.lctl{display:flex;align-items:center;gap:8px}
+.mwrap>.ck{border:0;border-radius:0}
+.lwrap{width:fit-content;max-width:100%}
+.lt{width:max-content}
+.lt th,.lt td{text-align:left}
+.lt td.nm{min-width:120px}
+.lt td.nu{white-space:nowrap}
+.lt td.nu .ent{display:inline-flex}
+.lt td.pl2{white-space:nowrap}
+.lt td.ic{width:44px;text-align:center}
+.lt .ent{margin:0}
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;margin:12px 2px 0;font-size:12px;color:var(--fg)}
+.lg.hotc{color:var(--court-red)}
+.lg.strongc{font-weight:700}
+.lg.offc{color:var(--court-off)}
+.lg.okc{color:var(--lens-ok)}
+.lg b{color:var(--muted);font-weight:600}
+
+@media (max-width:860px){
+  .stage{flex-direction:column}
+  .boardscroll{max-width:100%;width:100%}
+  .panel{width:100%;flex:none}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ---------- лут (оформление) ---------- */
+#lootBody{max-width:1100px}
+.lootwrap{margin-top:4px}
+.lt2 td.no{width:1%;text-align:center;color:var(--muted);font-weight:700}
+.lt2 td.nm{min-width:220px}
+.lt2 td.bc{text-align:center;min-width:80px;font-variant-numeric:tabular-nums}
+.lt2 td.bc.mine,.lt2 th.mine{background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
+.lt2 td.dark{background:var(--block);border-color:var(--block-line)}
+.lt2 td.bc.win{background:var(--day-ok);font-weight:700}
+.lt2 td.bc.tie{background:var(--warn-bg);font-weight:700}
+.lt2 td.bc.ref{color:var(--muted);text-decoration:line-through}
+.lt2 .sumrow td{background:var(--surface-2)}
+.lt2 .neg{color:var(--bad)}
+.lt2 .rdy{font-weight:800;color:var(--muted)}
+.lt2 .rdy.on{color:var(--ok)}
+.lt2 th .pdot{width:16px;height:16px;vertical-align:-3px}
+.lt2 .m-in{width:100%;min-width:200px}
+.lt2 .m-sq{width:52px;text-align:center}
+.warnmark{display:inline-block;margin-left:6px;color:#6B5200;background:var(--warn);border-radius:50%;width:18px;height:18px;line-height:18px;font-weight:800;font-size:12px;text-align:center;cursor:help}
+.lrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.lootsec{margin-top:20px}
+.lootsec h2{font-size:15px;margin:0 0 8px}
+.lcard{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:10px 14px;margin:0 0 10px;max-width:640px}
+.lch{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:700}
+.ltools{display:flex;gap:6px}
+.lp{margin:6px 0 0}
+.lgl{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+.lpre{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:var(--surface-2);font:13px/1.5 var(--font-body);white-space:pre-wrap}
+/* ---------- памятки, вики, заявки ---------- */
+.memo{max-width:640px;margin:22px 0 0;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.memo h2{font-size:15px;margin:0 0 8px}
+.memo h2:not(:first-child){margin-top:16px}
+.memo ol,.memo ul{margin:0;padding-left:22px}
+.memo li{margin:4px 0}
+.wiki{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.wnav{display:flex;flex-direction:column;gap:8px;flex:0 0 220px;min-width:0}
+.wnav .wl{height:auto;min-height:36px;white-space:normal;text-decoration:none;justify-content:flex-start}
+.wmemo{margin:0;flex:1 1 380px}
+#reqBody{max-width:760px}
+.rform{display:flex;flex-direction:column;gap:8px;max-width:760px}
+.rform .m-in,.rq .m-in{border:1px solid var(--line);background:var(--surface-2);width:100%}
+.rlab{display:flex;align-items:center;gap:10px}
+.rsel{width:auto;min-width:180px;font-size:14px;padding:6px}
+.rh{font-size:15px;margin:20px 0 8px}
+.rq{max-width:760px}
+.rtext{white-space:pre-wrap}
+.rq .reply{color:var(--accent);font-weight:600}
+.rbadge{font-size:12px;font-weight:700;padding:2px 10px;border-radius:999px;border:1px solid var(--line);color:var(--muted);flex:none}
+.rbadge.accepted{color:var(--lens-ok);border-color:var(--ok)}
+.rbadge.denied{color:var(--court-red);border-color:var(--bad)}
+.rbadge.open{color:#8A6A00;border-color:var(--warn)}
+/* ---------- календарь ---------- */
+.calwrap{width:800px;max-width:100%;margin:8px auto 0}
+.cal h2{margin:0 0 10px;text-align:center;font:600 18px/1.2 var(--font-display)}
+.calgrid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.calhd{text-align:center;font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;padding:4px 0}
+.day{position:relative;aspect-ratio:1.25;min-height:64px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding:0;font:inherit;color:var(--fg);cursor:default;text-align:left;overflow:hidden}
+.day.can{cursor:pointer}
+.day.can:hover{border-color:var(--accent)}
+.day .dn{position:absolute;top:4px;right:7px;font-size:12px;font-weight:700;color:var(--muted)}
+.day.today .dn{color:var(--accent-fg);background:var(--accent);border-radius:9px;padding:0 6px;right:4px}
+.day .dots{position:absolute;inset:18px 4px 8px 4px;display:flex;flex-wrap:wrap;gap:3px;align-items:center;justify-content:center;align-content:center}
+.day .dots .pdot{width:22px;height:22px}
+.day .stripe{position:absolute;left:0;right:0;bottom:0;height:8px;background:var(--ok)}
+.day.yel{background:var(--warn-bg);border-color:var(--warn)}
+.day.grn{background:var(--day-ok);border-color:var(--ok)}
+.day.off{background:var(--day-off);color:var(--muted)}
+.day.off .dots{display:none}
+.day.past{background:var(--day-off);color:var(--muted);opacity:.7}
+.day.past .stripe{opacity:.5}
+.callegend{margin:10px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+@media (max-width:560px){.day .dots .pdot{width:14px;height:14px}.day .dn{font-size:10px}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1 id="ttl">Доска Аватюристов</h1>
+  <span class="pill" id="conn"><span class="dot"></span><span id="connTxt">Подключение…</span></span>
+  <span class="pill" id="me" hidden></span>
+  <span class="counter" id="counter"></span>
+  <span class="spacer"></span>
+  <button class="btn" type="button" id="resetColors" title="Освободить все занятые цвета. Данные игры не затрагиваются.">Сбросить цвета</button>
+  <button class="btn" type="button" id="modeBtn" data-act="mode"></button>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Разделы">
+  <button class="tab" type="button" role="tab" data-tab="main">Главная</button>
+  <button class="tab" type="button" role="tab" data-tab="calendar">Календарь</button>
+  <button class="tab" type="button" role="tab" data-tab="tetris">Тетрис</button>
+  <button class="tab" type="button" role="tab" data-tab="loot">Лут</button>
+  <button class="tab" type="button" role="tab" data-tab="wiki">Вики</button>
+  <button class="tab" type="button" role="tab" data-tab="req">Заявки</button>
+</nav>
+
+<section id="tab-main" hidden>
+  <div class="adminbar" id="madmin" hidden>
+    <span class="lbl">Мастер</span>
+    <button class="btn primary" type="button" id="cStart">Начало обработки цикла</button>
+    <button class="btn" type="button" id="cEnd">Завершение цикла</button>
+    <span class="pill" id="cState"></span>
+  </div>
+  <div class="mbar" id="mbar" hidden>
+    <button class="btn" type="button" id="editBtn"></button>
+  </div>
+  <div class="mwrap fit"><table class="mt" id="mt"></table></div>
+  <section class="chk" id="chk" hidden>
+    <h2>Обработка цикла</h2>
+    <div class="mwrap"><table class="ck" id="ck"></table></div>
+  </section>
+  <section class="lenses" id="lenses">
+    <div class="lhead"><h2>Линзы</h2><span class="lctl" id="lctl"></span></div>
+    <div class="mwrap fit lwrap"><table class="ck lt" id="lt"></table></div>
+  </section>
+  <p class="legend">
+    <span class="lg"><b>Дворы:</b> обычный</span>
+    <span class="lg hotc">мощнее персонажа</span>
+    <span class="lg strongc">связан с историей</span>
+    <span class="lg offc">отключён</span>
+    <span class="lg okc"><b>Линзы:</b> цель достигнута</span>
+    <span class="lg hotc">дошла до нуля</span>
+  </p>
+  <p class="hint" id="mhint"></p>
+</section>
+
+<section id="tab-calendar" hidden>
+  <div class="calwrap cal">
+    <h2 id="calTitle"></h2>
+    <div class="calgrid" id="calGrid"></div>
+    <p class="callegend" id="calLegend"></p>
+  </div>
+</section>
+
+<section id="tab-loot" hidden>
+  <div id="lootBody"></div>
+  <aside class="memo" id="lootMemo">
+    <h2>Конец сессии, ребята! Вместе с лутом пишите мне:</h2>
+    <ol>
+      <li>Выполнили двор? Предметы? Закрыли драйв-квест?</li>
+      <li>Закажите квест по драйву, если надо!</li>
+      <li>Обработайте ОТ и получите травмы.</li>
+      <li>ПОЛУЧИТЕ ЛУТ!</li>
+    </ol>
+  </aside>
+</section>
+
+<section id="tab-wiki" hidden>
+  <div class="wiki">
+    <nav class="wnav" id="wikiNav" aria-label="Ссылки"></nav>
+    <article class="memo wmemo">
+      <h2>Короткий отдых</h2>
+      <ul>
+        <li>Восстановить 1 БП, 1 раз — бесплатно</li>
+        <li>Восстановить 2+ЛВЛ хитов, 1 раз — бесплатно, остальные разы — 1 БП</li>
+        <li>Восстановить заряды дневных/сессию способностей — 2 БП</li>
+        <li>Восстановить весь дух — 2 БП</li>
+        <li>Восстановить 1 стат — 1 БП</li>
+        <li>Снять 1 боль — 1 БП</li>
+        <li>Восстановить ману по регену — бесплатно 1 раз, далее 1 БП</li>
+        <li>Восстановить божественные касты (с шансом от двора) — 1 БП</li>
+      </ul>
+      <h2>Полный отдых</h2>
+      <ul>
+        <li>Восстановить все хиты</li>
+        <li>Восстановить все БП</li>
+        <li>Восстановить всю боль</li>
+        <li>Восстановить все заряды способностей</li>
+        <li>Восстановить все заклинания и ману</li>
+        <li>Восстановить все характеристики</li>
+        <li>Восстановить весь дух</li>
+        <li>Восстановить все статы</li>
+      </ul>
+    </article>
+  </div>
+</section>
+
+<section id="tab-req" hidden>
+  <div id="reqBody"></div>
+</section>
+
+<section id="tab-tetris" hidden>
+<div class="adminbar" id="adminbar" hidden>
+  <span class="lbl">Мастер</span>
+  <button class="btn primary" type="button" data-act="add-char"></button>
+  <button class="btn primary" type="button" data-act="add-proj"></button>
+  <button class="btn" type="button" data-act="reset-proj">Сбросить все проекты</button>
+  <button class="btn" type="button" data-act="reset-blocks">Сбросить все заглушки</button>
+</div>
+
+<div class="adminbar" id="playerbar" hidden>
+  <span class="lbl">Мои персонажи</span>
+  <button class="btn primary" type="button" data-act="add-mine"></button>
+</div>
+
+<main class="stage">
+  <div class="boardscroll" id="scroller">
+    <div class="board" id="board">
+      <div id="rows"></div>
+      <div class="rowmark" id="rowmark" hidden></div>
+      <div class="ptool" id="tool" hidden></div>
+    </div>
+  </div>
+  <aside class="panel" id="panel" aria-label="Список проектов"></aside>
+</main>
+
+<p class="hint" id="hint"></p>
+</section>
+<div id="cursors"></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<div class="banner" id="banner" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script>
+(function(){
+'use strict';
+
+/* ---------- настройки ---------- */
+const FIREBASE_CONFIG={
+  apiKey:"AIzaSyBbDr904Mk3-i8X8DAEeMnim8c45d5l3T8",
+  authDomain:"skrejet-9690c.firebaseapp.com",
+  databaseURL:"https://skrejet-9690c-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"skrejet-9690c",
+  storageBucket:"skrejet-9690c.firebasestorage.app",
+  messagingSenderId:"1065611303383",
+  appId:"1:1065611303383:web:c77d390f01f0bd0b1b5392"
+};
+const MASTER_PASSWORD='123123';
+
+const CELL=44, LABEL=184, CARD=26, GRID=8;
+const COLORS=['#D9534F','#E08A1E','#3E9B4F','#1F8FA6','#3F6FD1','#8A5CD0','#C44E94','#6B7A8F'];
+const PCOLORS=[
+  {k:'blue',n:'Player 1',v:'#2F6FED'},
+  {k:'red',n:'Player 2',v:'#E5484D'},
+  {k:'yellow',n:'Player 3',v:'#F2B705'},
+  {k:'green',n:'Player 4',v:'#22A559'},
+  {k:'orange',n:'Player 5',v:'#F08A24'}
+];
+const PCK={}; PCOLORS.forEach(c=>{PCK[c.k]=c;});
+const AV=['#3F6FD1','#C44E94','#1F8FA6','#8A5CD0','#E08A1E','#3E9B4F','#D9534F'];
+
+const ICON={
+  rot:'<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>',
+  back:'<svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>',
+  edit:'<svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  lock:'<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>',
+  grip:'<svg viewBox="0 0 12 16"><circle cx="3" cy="3" r="1.4"/><circle cx="9" cy="3" r="1.4"/><circle cx="3" cy="8" r="1.4"/><circle cx="9" cy="8" r="1.4"/><circle cx="3" cy="13" r="1.4"/><circle cx="9" cy="13" r="1.4"/></svg>'
+};
+
+/* ---------- утилиты ---------- */
+const $=s=>document.querySelector(s);
+const el=(t,c)=>{const n=document.createElement(t);if(c)n.className=c;return n;};
+const esc=s=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+const safeColor=(c,d)=>/^#[0-9a-fA-F]{6}$/.test(String(c))?String(c):d;
+const num=(v,d)=>Number.isFinite(+v)?+v:d;
+
+const boardEl=$('#board'), rowsEl=$('#rows'), toolEl=$('#tool'), markEl=$('#rowmark');
+const panelEl=$('#panel'), adminBar=$('#adminbar'), modeBtn=$('#modeBtn'), counterEl=$('#counter'), hintEl=$('#hint');
+const connEl=$('#conn'), connTxt=$('#connTxt'), meEl=$('#me'), curLayer=$('#cursors'), bannerEl=$('#banner');
+
+/* ---------- данные ---------- */
+let state={chars:[],blocks:{},projects:[]};   // доска (общая для всех через Firebase)
+let presence={};                              // курсоры
+let colorsTaken={};                           // занятые цвета
+let loaded=false, online=false, pending=false, selected=null;
+const TABS=['main','calendar','tetris','loot','wiki','req'];
+let tab='main';                               // вкладка: 'main', 'calendar' или 'tetris'
+const TIERS=5;
+const cellMap=new Map();
+
+const me={id:null,role:null,color:null,x:0,y:0,vis:true};
+function makeId(){return 'u'+Math.random().toString(36).slice(2,10)+Date.now().toString(36);}
+try{
+  me.id=sessionStorage.getItem('pb-id');
+  if(!me.id){me.id=makeId();sessionStorage.setItem('pb-id',me.id);}
+}catch(e){me.id=makeId();}
+const isMaster=()=>me.role==='master';
+
+let db=null;
+function initDb(){
+  try{
+    if(typeof firebase==='undefined') return;
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db=firebase.database();
+  }catch(e){db=null;}
+}
+const R=p=>db.ref(p);
+
+const pById=id=>state.projects.find(p=>p.id===id);
+const cById=id=>state.chars.find(c=>c.id===id);
+
+/* ---------- разбор данных из базы ---------- */
+const shapeToStr=cells=>cells.map(([r,c])=>r+','+c).join(';');
+const strToShape=s=>String(s||'').split(';').filter(Boolean).map(x=>x.split(',').map(Number)).filter(a=>a.length===2&&a.every(Number.isFinite));
+const atToStr=a=>a?a.r+','+a.c:null;
+const strToAt=s=>{if(!s) return null;const a=String(s).split(',').map(Number);return(a.length===2&&a.every(Number.isFinite))?{r:a[0],c:a[1]}:null;};
+
+function parseProjects(raw){
+  return Object.entries(raw||{}).map(([id,p])=>({
+    id,name:String((p&&p.name)||'Без названия'),desc:String((p&&p.desc)||''),
+    color:safeColor(p&&p.color,'#6B7A8F'),shape:strToShape(p&&p.shape),
+    rot:(((num(p&&p.rot,0))%4)+4)%4,at:strToAt(p&&p.at),order:num(p&&p.order,0)
+  })).filter(p=>p.shape.length).sort((a,b)=>a.order-b.order||(a.id<b.id?-1:1));
+}
+function parseBoard(val){
+  val=val||{};
+  const chars=Object.entries(val.chars||{}).map(([id,c])=>({
+    id,name:String((c&&c.name)||'?'),len:Math.max(1,Math.min(14,num(c&&c.len,1))),order:num(c&&c.order,0),
+    o:(c&&PCK[c.o])?c.o:'',m:String((c&&c.m)||'')
+  })).sort((a,b)=>a.order-b.order||(a.id<b.id?-1:1));
+  const blocks={};
+  for(const [id,o] of Object.entries(val.blocks||{})){
+    for(const k of Object.keys(o||{})) if(o[k]&&k.charAt(0)==='c') blocks[id+':'+k.slice(1)]=true;
+  }
+  return{chars,blocks,projects:parseProjects(val.projects)};
+}
+
+/* ---------- геометрия проектов ---------- */
+function norm(cells){
+  const mr=Math.min(...cells.map(x=>x[0])), mc=Math.min(...cells.map(x=>x[1]));
+  return cells.map(([r,c])=>[r-mr,c-mc]).sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+}
+function rot90(cells){
+  const mr=Math.max(...cells.map(x=>x[0]));
+  return norm(cells.map(([r,c])=>[c,mr-r]));
+}
+function rotated(shape,k){
+  let s=norm(shape);
+  const n=((k%4)+4)%4;
+  for(let i=0;i<n;i++) s=rot90(s);
+  return s;
+}
+function dims(cells){return{h:Math.max(...cells.map(x=>x[0]))+1,w:Math.max(...cells.map(x=>x[1]))+1};}
+
+function occupancy(st,exclude){
+  const m=new Map();
+  for(const p of st.projects){
+    if(!p.at||p.id===exclude) continue;
+    for(const [r,c] of rotated(p.shape,p.rot)) m.set((p.at.r+r)+','+(p.at.c+c),p.id);
+  }
+  return m;
+}
+function fitsAt(st,cells,ar,ac,exclude){
+  const occ=occupancy(st,exclude);
+  for(const [r,c] of cells){
+    const rr=ar+r, cc=ac+c, ch=st.chars[rr];
+    if(!ch||cc<0||cc>=ch.len) return false;
+    if(st.blocks[ch.id+':'+cc]) return false;
+    if(occ.has(rr+','+cc)) return false;
+  }
+  return true;
+}
+function revalidate(st){
+  const out=[];
+  for(const p of st.projects){
+    if(!p.at) continue;
+    if(!fitsAt(st,rotated(p.shape,p.rot),p.at.r,p.at.c,p.id)){p.at=null;out.push(p.id);}
+  }
+  return out;
+}
+const cloneState=st=>({chars:st.chars.map(c=>({...c})),blocks:{...st.blocks},projects:st.projects.map(p=>({...p,at:p.at?{...p.at}:null}))});
+const maxOrder=arr=>arr.reduce((m,x)=>Math.max(m,x.order||0),-1);
+
+/* ---------- кто что держит ---------- */
+function heldBy(pid){
+  for(const id of Object.keys(presence)){
+    const p=presence[id];
+    if(id!==me.id&&p&&p.h===pid) return{id,c:p.c};
+  }
+  return null;
+}
+const holderName=c=>c==='m'?'мастер':(PCK[c]?PCK[c].n:'игрок');
+const holderColor=c=>c==='m'?'var(--fg)':(PCK[c]?PCK[c].v:'#888');
+
+/* ---------- отрисовка фигур ---------- */
+function joins(set,r,c){
+  return{u:set.has((r-1)+','+c),d:set.has((r+1)+','+c),l:set.has(r+','+(c-1)),r:set.has(r+','+(c+1))};
+}
+function slotCss(j,pad,rad,color){
+  const tl=(!j.u&&!j.l)?rad:0, tr=(!j.u&&!j.r)?rad:0, br=(!j.d&&!j.r)?rad:0, bl=(!j.d&&!j.l)?rad:0;
+  return 'inset:'+(j.u?0:pad)+'px '+(j.r?0:pad)+'px '+(j.d?0:pad)+'px '+(j.l?0:pad)+'px;'
+    +'border-radius:'+tl+'px '+tr+'px '+br+'px '+bl+'px;background:'+color+';';
+}
+function buildShape(cells,size,color){
+  const d=dims(cells), root=el('div','shape');
+  root.style.width=d.w*size+'px'; root.style.height=d.h*size+'px';
+  const set=new Set(cells.map(([r,c])=>r+','+c));
+  const pad=size>=40?2:1.5, rad=Math.round(size*.2);
+  for(const [r,c] of cells){
+    const s=el('div','sl');
+    s.style.cssText='left:'+c*size+'px;top:'+r*size+'px;width:'+size+'px;height:'+size+'px;';
+    const f=el('div','fill');
+    f.style.cssText=slotCss(joins(set,r,c),pad,rad,color);
+    s.appendChild(f); root.appendChild(s);
+  }
+  return root;
+}
+
+/* ---------- отрисовка доски ---------- */
+function renderBoard(){
+  const cols=Math.max(1,...state.chars.map(c=>c.len));
+  const master=isMaster();
+  boardEl.style.width=(LABEL+cols*CELL)+'px';
+  rowsEl.style.height=(state.chars.length*CELL)+'px';
+  rowsEl.innerHTML=''; cellMap.clear();
+  if(!state.chars.length){
+    rowsEl.style.height='auto';
+    boardEl.style.width='380px';
+    const e=el('div','empty');
+    if(!loaded) e.textContent='Загрузка доски…';
+    else if(master){
+      e.innerHTML='<span>Доска пока пустая. Добавьте персонажей кнопкой «Персонаж» или загрузите пример.</span>'
+        +'<button class="btn primary" type="button" data-act="seed">Загрузить пример</button>';
+    }else e.textContent='Мастер ещё не создал доску.';
+    rowsEl.appendChild(e);
+  }
+  const occ=occupancy(state), sets=new Map(), firsts=new Map();
+  for(const p of state.projects){
+    if(!p.at) continue;
+    const cs=rotated(p.shape,p.rot);
+    sets.set(p.id,new Set(cs.map(([r,c])=>(p.at.r+r)+','+(p.at.c+c))));
+    firsts.set(p.id,(p.at.r+cs[0][0])+','+(p.at.c+cs[0][1]));
+  }
+  state.chars.forEach((ch,i)=>{
+    const row=el('div','row'+(canTE(ch)&&!master?' own':'')); row.dataset.i=i; row.dataset.id=ch.id;
+    const who=el('div','who'); who.dataset.i=i;
+    if(master){const g=el('span','grip');g.innerHTML=ICON.grip;who.appendChild(g);}
+    const av=el('span','avatar');
+    av.style.background=AV[i%AV.length];
+    av.textContent=(ch.name||'?').trim().charAt(0).toUpperCase();
+    who.appendChild(av);
+    const nm=el('span','name'); nm.textContent=ch.name; nm.title=ch.name+(ch.o?' — '+((mainData[ch.o]&&mainData[ch.o].nick)||PCK[ch.o].n):''); who.appendChild(nm);
+    if(canTE(ch)){
+      const eb=el('button','ib'); eb.type='button'; eb.dataset.act='edit-char'; eb.dataset.id=ch.id;
+      eb.setAttribute('aria-label','Изменить персонажа'); eb.innerHTML=ICON.edit; who.appendChild(eb);
+    }
+    const cells=el('div','cells');
+    for(let c=0;c<ch.len;c++){
+      const cell=el('div','cell'); cell.dataset.r=i; cell.dataset.c=c;
+      const slot=el('div','slot');
+      const key=i+','+c, pid=occ.get(key);
+      if(pid){
+        const p=pById(pid);
+        cell.dataset.pid=pid; cell.title=p.name;
+        if(heldBy(pid)) cell.classList.add('lifted');
+        slot.classList.add('occ');
+        slot.style.cssText=slotCss(joins(sets.get(pid),i,c),2,9,p.color);
+        if(firsts.get(pid)===key){
+          slot.innerHTML='<span class="ini">'+esc((p.name||'?').charAt(0).toUpperCase())+'</span>';
+          cell.appendChild(slot);
+          cell.insertAdjacentHTML('beforeend','<span class="tick">'+ICON.check+'</span>');
+        }
+      }else if(state.blocks[ch.id+':'+c]){
+        slot.classList.add('block');
+      }
+      if(!slot.parentNode) cell.appendChild(slot);
+      cells.appendChild(cell); cellMap.set(key,cell);
+    }
+    row.append(who,cells); rowsEl.appendChild(row);
+  });
+  positionTool();
+}
+
+function positionTool(){
+  boardEl.querySelectorAll('.cell.sel').forEach(c=>c.classList.remove('sel'));
+  toolEl.hidden=true;
+  if(!selected) return;
+  const p=pById(selected);
+  if(!p||!p.at){selected=null;return;}
+  boardEl.querySelectorAll('.cell[data-pid="'+p.id+'"]').forEach(c=>c.classList.add('sel'));
+  const cells=rotated(p.shape,p.rot), d=dims(cells);
+  toolEl.innerHTML='<span class="tn">'+esc(p.name)+'</span>'
+    +'<button class="ib info" type="button" data-act="info" data-pid="'+p.id+'" aria-label="Описание">i</button>'
+    +'<button class="ib" type="button" data-act="rot" data-pid="'+p.id+'" aria-label="Повернуть">'+ICON.rot+'</button>'
+    +'<button class="ib" type="button" data-act="back" data-pid="'+p.id+'" aria-label="Вернуть в список">'+ICON.back+'</button>'
+    +(isMaster()?'<button class="ib" type="button" data-act="edit-proj" data-pid="'+p.id+'" aria-label="Изменить проект">'+ICON.edit+'</button>':'');
+  toolEl.hidden=false;
+  let left=LABEL+(p.at.c+cells[0][1])*CELL;
+  let top=p.at.r*CELL-38;
+  if(p.at.r===0) top=(p.at.r+d.h)*CELL+4;
+  left=Math.max(0,Math.min(left,boardEl.offsetWidth-toolEl.offsetWidth));
+  toolEl.style.left=left+'px'; toolEl.style.top=top+'px';
+}
+
+/* ---------- правая панель ---------- */
+function renderPanel(){
+  const placed=state.projects.filter(p=>p.at).length;
+  panelEl.innerHTML='<div class="phead"><h2>Проекты</h2><span class="counter">В доске '+placed+' из '+state.projects.length+'</span></div>';
+  const list=el('div','plist');
+  if(!state.projects.length){
+    list.innerHTML='<p class="muted" style="margin:0">'+(loaded?'Проектов пока нет.':'Загрузка…')+'</p>';
+  }
+  const master=isMaster();
+  state.projects.forEach(p=>{
+    const hb=heldBy(p.id);
+    const card=el('div','proj'+(p.at?' placed':'')+(hb?' held':'')); card.dataset.pid=p.id;
+    const head=el('div','ph');
+    head.innerHTML='<span class="pn" title="'+esc(p.name)+'">'+esc(p.name)+'</span>'
+      +'<button class="ib info" type="button" data-act="info" data-pid="'+p.id+'" aria-label="Описание проекта">i</button>'
+      +'<button class="ib" type="button" data-act="rot" data-pid="'+p.id+'" aria-label="Повернуть">'+ICON.rot+'</button>'
+      +(master?'<button class="ib" type="button" data-act="edit-proj" data-pid="'+p.id+'" aria-label="Изменить проект">'+ICON.edit+'</button>':'');
+    const box=el('div','shapebox'); box.appendChild(buildShape(rotated(p.shape,p.rot),CARD,p.color));
+    const st=el('div','state');
+    if(hb) st.innerHTML='<span class="dot" style="background:'+holderColor(hb.c)+'"></span>Двигает: '+esc(holderName(hb.c));
+    else st.textContent=p.at?'В доске':'Свободен';
+    card.append(head,box,st);
+    if(p.at) card.insertAdjacentHTML('beforeend','<span class="tick">'+ICON.check+'</span>');
+    list.appendChild(card);
+  });
+  panelEl.appendChild(list);
+}
+
+function renderTop(){
+  const placed=state.projects.filter(p=>p.at).length;
+  counterEl.textContent='В доске '+placed+' из '+state.projects.length;
+  counterEl.hidden=(tab!=='tetris');
+  curLayer.hidden=(tab!=='tetris');
+  const master=isMaster();
+  adminBar.hidden=!master;
+  applyTitle();
+  $('#playerbar').hidden=(me.role!=='player');
+  $('#playerbar [data-act="add-mine"]').innerHTML=ICON.plus+'Добавить моего персонажа';
+  document.body.classList.toggle('admin',master);
+  modeBtn.hidden=!me.role;
+  modeBtn.innerHTML=master?'Выйти из режима мастера':ICON.lock+'Режим мастера';
+  adminBar.querySelector('[data-act="add-char"]').innerHTML=ICON.plus+'Персонаж';
+  adminBar.querySelector('[data-act="add-proj"]').innerHTML=ICON.plus+'Проект';
+  $('#madmin').hidden=!master;
+  $('#mbar').hidden=!me.role;
+  $('#editBtn').innerHTML=editMode?ICON.check+'Готово':ICON.edit+'Редактировать';
+  $('#editBtn').classList.toggle('primary',editMode);
+  $('#cStart').disabled=cyc.open;
+  $('#cState').textContent=cyc.open?'Идёт обработка цикла':'Цикл не запущен';
+  $('#mhint').textContent=master
+    ? 'Нажмите «Редактировать», чтобы править любые строки и очищать их. В этом режиме «О» отключает двор, «×» удаляет. Красную линзу удаляет только мастер.'
+    : (me.role
+        ? 'Чтобы изменить свою строку (рядом с ником цветной кружок), нажмите «Редактировать». В этом режиме «+» добавляет, «О» отключает двор, «×» удаляет. Свою линзу вы ведёте в разделе «Линзы». Чужие строки видны всем, но изменить их нельзя.'
+        : '');
+  connEl.className='pill'+(online?' on':'');
+  connTxt.textContent=online?'Онлайн':(db?'Нет связи':'Не подключено');
+  if(!me.role){meEl.hidden=true;}
+  else{
+    meEl.hidden=false;
+    meEl.innerHTML='';
+    if(master){
+      const d0=el('span','dot'); d0.style.background='var(--fg)'; meEl.appendChild(d0);
+      meEl.appendChild(document.createTextNode('Вы: мастер'));
+    }else{
+      meEl.appendChild(makeDotEditable(dotEl(me.color),me.color));
+      meEl.appendChild(document.createTextNode('Вы: '+PCK[me.color].n));
+    }
+  }
+  hintEl.textContent=master
+    ? 'Мастер: клик по пустой клетке ставит или убирает заглушку. Тяните персонажа за имя, чтобы переставить его выше или ниже. Остальное доступно как игроку.'
+    : 'Перетащите проект мышкой на свободные клетки. На строках своих персонажей клик по пустой клетке ставит или убирает заглушку, а карандаш меняет длину линии. Во время перетаскивания правая кнопка мыши или клавиша R поворачивают проект, Esc отменяет. Чтобы вернуть проект в список, перетащите его с доски на правую часть или за пределы доски.';
+}
+
+function busy(){return !!((drag&&drag.active)||(rdrag&&rdrag.active));}
+function render(){
+  pending=false;
+  if(tab==='tetris'){renderBoard();renderPanel();renderCursors();}
+  else if(tab==='calendar') renderCal();
+  else if(tab==='loot') renderLootSafe();
+  else if(tab==='req') renderReqSafe();
+  else if(tab==='wiki') renderWiki();
+  else renderMainSafe();
+  renderTop();
+}
+function requestRender(){if(busy()) pending=true; else render();}
+function flushPending(){if(pending&&!busy()) render();}
+
+/* ---------- чужие курсоры и фигуры в руках ---------- */
+const curNodes=new Map(), ghostNodes=new Map();
+function mkCursor(ck){
+  const n=el('div','rc'); n.dataset.c=ck;
+  const fill=ck==='m'?'var(--cur-fill)':colorOf(ck);
+  n.dataset.col=fill;
+  const stroke=ck==='m'?'var(--cur-stroke)':'#fff';
+  n.innerHTML='<svg viewBox="0 0 24 24"><path style="fill:'+fill+';stroke:'+stroke+'" stroke-width="1.6" stroke-linejoin="round" d="M3 2l7.5 18.5 2.6-7.9L21 10z"/></svg>';
+  return n;
+}
+function renderCursors(){
+  const br=boardEl.getBoundingClientRect(), seen=new Set(), seenG=new Set();
+  for(const id of Object.keys(presence)){
+    const p=presence[id];
+    if(id===me.id||!p||!(p.c==='m'||PCK[p.c])) continue;
+    seen.add(id);
+    let n=curNodes.get(id);
+    if(n&&(n.dataset.c!==p.c||(p.c!=='m'&&n.dataset.col!==colorOf(p.c)))){n.remove();curNodes.delete(id);n=null;}
+    if(!n){n=mkCursor(p.c);curLayer.appendChild(n);curNodes.set(id,n);}
+    n.hidden=(p.v===0);
+    n.style.transform='translate('+(br.left+num(p.x,0)-3)+'px,'+(br.top+num(p.y,0)-2)+'px)';
+    const hp=p.h&&pById(p.h);
+    if(hp&&p.v!==0){
+      seenG.add(id);
+      const sig=hp.id+':'+(num(p.r,0)%4);
+      let g=ghostNodes.get(id);
+      if(g&&g.dataset.sig!==sig){g.remove();ghostNodes.delete(id);g=null;}
+      if(!g){g=buildShape(rotated(hp.shape,num(p.r,0)),CELL,hp.color);g.classList.add('rghost');g.dataset.sig=sig;curLayer.appendChild(g);ghostNodes.set(id,g);}
+      g.style.transform='translate('+(br.left+num(p.x,0)-num(p.ox,0))+'px,'+(br.top+num(p.y,0)-num(p.oy,0))+'px)';
+    }
+  }
+  for(const [id,n] of curNodes) if(!seen.has(id)){n.remove();curNodes.delete(id);}
+  for(const [id,g] of ghostNodes) if(!seenG.has(id)){g.remove();ghostNodes.delete(id);}
+}
+let heldSig='';
+function onPresence(){
+  const sig=Object.keys(presence).filter(id=>id!==me.id&&presence[id]&&presence[id].h).map(id=>presence[id].h+':'+id).sort().join('|');
+  renderCursors();
+  if(sig!==heldSig){heldSig=sig;requestRender();}
+}
+
+/* ---------- мой курсор ---------- */
+let presT=null, presLast=0;
+function presObj(){
+  const o={c:isMaster()?'m':me.color,x:Math.round(me.x),y:Math.round(me.y),v:me.vis?1:0,b:Date.now()%1000000000};
+  if(drag&&drag.active){o.h=drag.pid;o.r=drag.rot;o.ox=Math.round(drag.off.x);o.oy=Math.round(drag.off.y);}
+  return o;
+}
+function flushPresence(){
+  if(!db||!me.role) return;
+  presLast=Date.now();
+  R('presence/'+me.id).set(presObj());
+}
+function schedulePresence(force){
+  if(!me.role||!db) return;
+  if(force){clearTimeout(presT);presT=null;flushPresence();return;}
+  if(presT) return;
+  presT=setTimeout(()=>{presT=null;flushPresence();},Math.max(0,45-(Date.now()-presLast)));
+}
+
+/* ---------- роли и цвета ---------- */
+// цвет считается занятым, пока его владелец «жив»: его запись в presence меняется (пульс раз в 20 с).
+// Если запись не менялась дольше STALE_MS (вкладка закрыта без связи, ноутбук уснул), цвет можно занять сразу.
+const HB_MS=20000, STALE_MS=75000, ownerSeen=new Map();
+function trackOwners(){
+  const now=Date.now(), ids=new Set(Object.values(colorsTaken||{}));
+  ids.forEach(id=>{
+    const sig=presence[id]?JSON.stringify(presence[id]):'none', rec=ownerSeen.get(id);
+    if(!rec||rec.sig!==sig) ownerSeen.set(id,{sig,at:now});
+  });
+  for(const id of [...ownerSeen.keys()]) if(!ids.has(id)) ownerSeen.delete(id);
+}
+function ownerAlive(id){
+  if(!id||id===me.id) return true;
+  trackOwners();
+  const rec=ownerSeen.get(id);
+  return !rec||Date.now()-rec.at<STALE_MS;
+}
+const colorBusy=k=>{const o=colorsTaken[k]; return !!o&&o!==me.id&&ownerAlive(o);};
+function assertPresence(){
+  if(!db||!me.role) return;
+  R('presence/'+me.id).onDisconnect().remove();
+  flushPresence();
+  if(me.role==='player') R('colors/'+me.color).onDisconnect().remove();
+}
+function enterRole(role,color){
+  me.role=role; me.color=color||null; me.vis=true; editMode=false;
+  closeModal(); assertPresence(); render();
+}
+// освобождает все цвета и курсоры; данные игры не трогает. Тех, кто сейчас в игре, программа сразу возвращает на их цвета
+function resetColors(){
+  if(!db){toast('Нет связи с базой');return;}
+  R('colors').remove().then(()=>{
+    toast('Цвета освобождены. Данные игры не затронуты.');
+  },e=>toast('Не удалось сбросить цвета'+(e&&e.code?' ('+e.code+')':'')));
+  R('presence').remove();
+}
+// игрок может сбрасывать цвета раз в 5 минут, мастер без ограничений
+const RESET_CD=5*60*1000;
+function resetWait(){
+  if(isMaster()) return 0;
+  let last=0;
+  try{last=+localStorage.getItem('pb-reset-at')||0;}catch(e){last=resetLast;}
+  return Math.max(0,last+RESET_CD-Date.now());
+}
+let resetLast=0;
+function tryReset(btn){
+  const w=resetWait();
+  if(w>0){
+    const tot=Math.ceil(w/1000), m=Math.floor(tot/60), sec=tot%60;
+    toast('Сбросить цвета можно раз в 5 минут. Подождите ещё '+[m?m+' мин':'',(sec||!m)?sec+' с':''].filter(Boolean).join(' ')+'.');
+    return;
+  }
+  arm(btn,()=>{
+    if(resetWait()>0) return;
+    resetLast=Date.now();
+    try{localStorage.setItem('pb-reset-at',String(resetLast));}catch(e){}
+    resetColors();
+  });
+}
+function reclaimColor(){
+  R('colors/'+me.color).transaction(cur=>{
+    if(cur===null||cur===me.id) return me.id;
+    return undefined;
+  },(err,ok)=>{
+    if(err||!ok){
+      if(me.role==='player'){
+        me.role=null; me.color=null; render();
+        toast('Ваш цвет занял другой игрок. Выберите другой.');
+        entryModal();
+      }
+    }else assertPresence();
+  });
+}
+function pickColor(k){
+  if(!db){toast('Нет связи с базой');return;}
+  const own=colorsTaken[k];
+  if(own&&own!==me.id&&!ownerAlive(own)){
+    R('colors/'+k).set(me.id).then(()=>enterRole('player',k),()=>toast('Не удалось занять цвет'));
+    return;
+  }
+  R('colors/'+k).transaction(cur=>{
+    if(cur===null||cur===me.id) return me.id;
+    return undefined;
+  },(err,ok)=>{
+    if(err){toast('Не удалось связаться с базой'+(err.code?' ('+err.code+')':'')+'. Проверьте интернет и правила Firebase.');return;}
+    if(!ok){toast('Этот цвет уже занят, выберите другой');return;}
+    enterRole('player',k);
+  });
+}
+function becomeMaster(){
+  if(me.role==='player'&&db){
+    const cr=R('colors/'+me.color);
+    cr.onDisconnect().cancel(); cr.remove();
+  }
+  enterRole('master',null);
+}
+function leaveMaster(){
+  if(db) R('presence/'+me.id).remove();
+  me.role=null; me.color=null; selected=null; editMode=false;
+  render(); entryModal();
+}
+function onConnected(){
+  if(!me.role) return;
+  if(me.role==='player'){
+    R('colors/'+me.color).transaction(cur=>{
+      if(cur===null||cur===me.id) return me.id;
+      return undefined;
+    },(err,ok)=>{
+      if(err||!ok){
+        me.role=null; me.color=null; render();
+        toast('Пока не было связи, ваш цвет заняли. Выберите другой.');
+        entryModal();
+      }else assertPresence();
+    });
+  }else assertPresence();
+}
+
+/* ---------- запись в базу: мастер ---------- */
+function saveChar(id,name,len){
+  const st=cloneState(state), u={};
+  let key=id; const isNew=!key;
+  if(!key){
+    key=R('board/chars').push().key;
+    st.chars.push({id:key,name,len,order:maxOrder(st.chars)+1});
+  }
+  const c=st.chars.find(x=>x.id===key);
+  c.name=name; c.len=len;
+  if(isNew) u['chars/'+key]={name,len,order:c.order};
+  else{u['chars/'+key+'/name']=name;u['chars/'+key+'/len']=len;}
+  for(const k of Object.keys(st.blocks)){
+    const i=k.lastIndexOf(':'), cid=k.slice(0,i), col=+k.slice(i+1);
+    if(cid===key&&col>=len){delete st.blocks[k];u['blocks/'+key+'/c'+col]=null;}
+  }
+  const un=revalidate(st);
+  un.forEach(pid=>{u['projects/'+pid+'/at']=null;});
+  R('board').update(u);
+  return un.length;
+}
+const normName=n=>String(n||'').trim().toLowerCase();
+const nameTaken=(name,exceptId)=>state.chars.some(c=>c.id!==exceptId&&normName(c.name)===normName(name));
+const canTE=ch=>!!(db&&me.role&&ch&&(isMaster()||(me.role==='player'&&ch.o===me.color)));
+// игрок добавляет своего персонажа с «Главной»; ключ записи зависит от персонажа, поэтому дубль невозможен
+function addMyChar(mid,len){
+  if(!db||me.role!=='player') return 'no';
+  const d=mainData[me.color], c=d&&d.chars.find(x=>x.id===mid); if(!c) return 'no';
+  const name=charName(d,mid), mk=mid||'0';
+  if(state.chars.some(x=>(x.o===me.color&&x.m===mk)||normName(x.name)===normName(name))) return 'dup';
+  R('board/chars/m'+me.color+'_'+mk).transaction(cur=>cur?undefined:{name,len,order:maxOrder(state.chars)+1,o:me.color,m:mk},
+    (err,ok)=>{if(!err&&!ok) toast('Этот персонаж уже на доске');});
+  return 'ok';
+}
+function deleteChar(id){
+  const st=cloneState(state), u={};
+  st.chars=st.chars.filter(c=>c.id!==id);
+  for(const k of Object.keys(st.blocks)) if(k.slice(0,k.lastIndexOf(':'))===id) delete st.blocks[k];
+  u['chars/'+id]=null; u['blocks/'+id]=null;
+  const un=revalidate(st);
+  un.forEach(pid=>{u['projects/'+pid+'/at']=null;});
+  R('board').update(u);
+  return un.length;
+}
+function reorderChars(id,target){
+  const st=cloneState(state), u={};
+  const from=st.chars.findIndex(c=>c.id===id);
+  if(from<0) return 0;
+  const [c]=st.chars.splice(from,1);
+  st.chars.splice(Math.max(0,Math.min(st.chars.length,target)),0,c);
+  st.chars.forEach((x,i)=>{x.order=i;u['chars/'+x.id+'/order']=i;});
+  const un=revalidate(st);
+  un.forEach(pid=>{u['projects/'+pid+'/at']=null;});
+  R('board').update(u);
+  return un.length;
+}
+function saveProject(id,f){
+  const u={}; let un=0;
+  if(!id){
+    const key=R('board/projects').push().key;
+    u['projects/'+key]={name:f.name,desc:f.desc,color:f.color,shape:shapeToStr(f.shape),rot:0,order:maxOrder(state.projects)+1};
+  }else{
+    const st=cloneState(state), p=st.projects.find(x=>x.id===id);
+    if(!p) return 0;
+    const changed=JSON.stringify(norm(p.shape))!==JSON.stringify(f.shape);
+    u['projects/'+id+'/name']=f.name; u['projects/'+id+'/desc']=f.desc; u['projects/'+id+'/color']=f.color;
+    if(changed){
+      p.shape=f.shape; p.rot=0;
+      u['projects/'+id+'/shape']=shapeToStr(f.shape); u['projects/'+id+'/rot']=0;
+      const gone=revalidate(st);
+      gone.forEach(pid=>{u['projects/'+pid+'/at']=null;});
+      un=gone.length;
+    }
+  }
+  R('board').update(u);
+  return un;
+}
+function deleteProject(id){R('board/projects/'+id).remove();}
+function resetProjects(){
+  const u={};
+  state.projects.forEach(p=>{if(p.at) u['projects/'+p.id+'/at']=null;});
+  if(Object.keys(u).length) R('board').update(u);
+}
+function resetBlocks(){R('board/blocks').remove();}
+function toggleBlock(charId,col){
+  const k=charId+':'+col;
+  R('board/blocks/'+charId+'/c'+col).set(state.blocks[k]?null:true);
+}
+function seedExample(){
+  const u={}, ck=[];
+  [['Аврора',6],['Бернард',5],['Цирилла',6],['Дарий',4],['Эльза',5],['Фаррель',6],['Гвен',3]].forEach((c,i)=>{
+    const k=R('board/chars').push().key; ck.push(k);
+    u['chars/'+k]={name:c[0],len:c[1],order:i};
+  });
+  u['blocks/'+ck[1]+'/c2']=true; u['blocks/'+ck[3]+'/c3']=true;
+  [
+    ['Побег из города',3,'Группа покидает город до рассвета. Нужны двое, кто знает ночные маршруты.',[[0,0],[0,1],[1,0],[1,1]],{r:0,c:0}],
+    ['Тайный союз',5,'Переговоры за закрытыми дверями. Четыре стороны, и каждая знает только часть плана.',[[0,1],[1,0],[1,2],[2,1]],null],
+    ['Старый маяк',1,'Экспедиция к заброшенному маяку: долгая подготовка у двоих и рывок в конце.',[[0,0],[1,0],[2,0],[2,1],[2,2]],{r:2,c:0}],
+    ['Ярмарка',2,'Три дня сцен на ярмарке: торговля, слухи и мелкие интриги.',[[0,0],[0,1],[0,2]],null],
+    ['Допрос',0,'Сцена допроса и её последствия для трёх героев.',[[0,0],[0,1],[0,2],[1,1]],null],
+    ['Погоня',4,'Погоня по крышам. Нужно широкое окно времени сразу у нескольких героев.',[[0,0],[0,1],[0,2],[1,0],[1,1],[1,2]],null],
+    ['Письмо',6,'Короткая сцена: письмо находит адресата.',[[0,0]],null]
+  ].forEach((p,i)=>{
+    const k=R('board/projects').push().key;
+    const o={name:p[0],color:COLORS[p[1]],desc:p[2],shape:shapeToStr(p[3]),rot:0,order:i};
+    if(p[4]) o.at=atToStr(p[4]);
+    u['projects/'+k]=o;
+  });
+  R('board').update(u);
+}
+
+/* ---------- запись в базу: игроки ---------- */
+function placeProject(pid,at,rot){
+  R('board/projects').transaction(cur=>{
+    if(cur===null) return cur;               // данных ещё нет в кэше: пусть повторит с сервера
+    if(!cur[pid]) return undefined;
+    const st={chars:state.chars,blocks:state.blocks,projects:parseProjects(cur)};
+    const p=st.projects.find(x=>x.id===pid);
+    if(!p) return undefined;
+    if(!fitsAt(st,rotated(p.shape,rot),at.r,at.c,pid)) return undefined;
+    cur[pid].at=atToStr(at); cur[pid].rot=rot;
+    return cur;
+  },(err,ok)=>{
+    if(err||!ok) toast('Не удалось поставить проект: место уже занято');
+  });
+}
+function rotateProject(pid){
+  const p=pById(pid); if(!p||!db) return;
+  const nr=(p.rot+1)%4;
+  if(!p.at){R('board/projects/'+pid+'/rot').set(nr);return;}
+  const oldD=dims(rotated(p.shape,p.rot)), cells=rotated(p.shape,nr), nd=dims(cells);
+  const br=p.at.r+Math.round((oldD.h-nd.h)/2), bc=p.at.c+Math.round((oldD.w-nd.w)/2);
+  const cand=[];
+  for(let dr=-2;dr<=2;dr++) for(let dc=-2;dc<=2;dc++) cand.push([dr,dc,Math.abs(dr)+Math.abs(dc)]);
+  cand.sort((a,b)=>a[2]-b[2]);
+  for(const [dr,dc] of cand){
+    if(fitsAt(state,cells,br+dr,bc+dc,p.id)){placeProject(pid,{r:br+dr,c:bc+dc},nr);return;}
+  }
+  toast('При повороте проект не помещается на этом месте');
+}
+function unplace(pid){
+  const p=pById(pid); if(!p||!db) return;
+  if(selected===pid) selected=null;
+  R('board/projects/'+pid+'/at').remove();
+}
+function focusProject(pid){
+  selected=pid; positionTool();
+  boardEl.querySelectorAll('.cell[data-pid="'+pid+'"]').forEach(c=>{c.classList.remove('pulse');void c.offsetWidth;c.classList.add('pulse');});
+}
+
+/* ---------- уведомления, подсказки ---------- */
+let toastT=null;
+function toast(msg){
+  const t=$('#toast'); t.textContent=msg; t.hidden=false;
+  clearTimeout(toastT); toastT=setTimeout(()=>{t.hidden=true;},3200);
+}
+let popEl=null, popFor=null;
+function closePop(){if(popEl){popEl.remove();popEl=null;popFor=null;}}
+function togglePop(anchor,pid){
+  if(popEl&&popFor===pid){closePop();return;}
+  closePop();
+  const p=pById(pid); if(!p) return;
+  const pop=el('div','pop');
+  pop.innerHTML='<h3>'+esc(p.name)+'</h3><p>'+(p.desc?esc(p.desc):'<span class="muted">Описание пока не добавлено.</span>')+'</p>';
+  document.body.appendChild(pop); popEl=pop; popFor=pid;
+  const r=anchor.getBoundingClientRect();
+  let top=r.bottom+8;
+  if(top+pop.offsetHeight>innerHeight-8) top=Math.max(8,r.top-pop.offsetHeight-8);
+  pop.style.left=Math.max(8,Math.min(r.left-8,innerWidth-pop.offsetWidth-8))+'px';
+  pop.style.top=top+'px';
+}
+
+/* ---------- перетаскивание проектов ---------- */
+let drag=null;
+function nearestCell(cells,gx,gy){
+  let best=cells[0],bd=1e9;
+  for(const [r,c] of cells){
+    const d=Math.hypot(gx-(c+.5),gy-(r+.5));
+    if(d<bd){bd=d;best=[r,c];}
+  }
+  return best;
+}
+function prepDrag(e,pid,src,node){
+  const p=pById(pid); if(!p) return;
+  if(heldBy(pid)){toast('Этот проект сейчас двигает другой игрок');return;}
+  drag={pid,src,node,sx:e.clientX,sy:e.clientY,px:e.clientX,py:e.clientY,active:false,rot:p.rot,hi:[]};
+  window.addEventListener('pointermove',onMove);
+  window.addEventListener('pointerup',onUp);
+  window.addEventListener('pointercancel',onCancel);
+  window.addEventListener('contextmenu',onCtx);
+  e.preventDefault();
+}
+function activate(){
+  const p=pById(drag.pid);
+  if(!p){endDrag();return false;}
+  drag.active=true; closePop();
+  document.body.classList.add('dragging');
+  drag.cells=rotated(p.shape,drag.rot);
+  const br=boardEl.getBoundingClientRect();
+  if(drag.src==='card'){
+    const sh=drag.node.querySelector('.shape'), rc=sh.getBoundingClientRect();
+    const gx=(drag.sx-rc.left)/CARD, gy=(drag.sy-rc.top)/CARD;
+    const g=nearestCell(drag.cells,gx,gy);
+    drag.grab=g;
+    const inside=gx>=g[1]&&gx<=g[1]+1&&gy>=g[0]&&gy<=g[0]+1;
+    drag.off=inside?{x:gx*CELL,y:gy*CELL}:{x:(g[1]+.5)*CELL,y:(g[0]+.5)*CELL};
+  }else{
+    const at=p.at||{r:0,c:0};
+    drag.grab=[+drag.node.dataset.r-at.r,+drag.node.dataset.c-at.c];
+    drag.off={x:drag.sx-(br.left+LABEL+at.c*CELL),y:drag.sy-(br.top+at.r*CELL)};
+    boardEl.querySelectorAll('.cell[data-pid="'+p.id+'"]').forEach(c=>c.classList.add('lifted'));
+  }
+  buildGhost(p);
+  schedulePresence(true);
+  return true;
+}
+function buildGhost(p){
+  if(drag.ghost) drag.ghost.remove();
+  drag.ghost=buildShape(drag.cells,CELL,p.color);
+  drag.ghost.classList.add('ghost');
+  document.body.appendChild(drag.ghost);
+}
+function moveGhost(){
+  drag.ghost.style.transform='translate('+(drag.px-drag.off.x)+'px,'+(drag.py-drag.off.y)+'px)';
+}
+function clearHi(){
+  for(const s of drag.hi) s.classList.remove('t-ok','t-bad');
+  drag.hi=[];
+}
+function evaluate(){
+  clearHi();
+  const br=boardEl.getBoundingClientRect();
+  const gx=drag.px-drag.off.x, gy=drag.py-drag.off.y;
+  const ac=Math.round((gx-br.left-LABEL)/CELL), ar=Math.round((gy-br.top)/CELL);
+  drag.target={r:ar,c:ac};
+  drag.valid=fitsAt(state,drag.cells,ar,ac,drag.pid);
+  drag.overBoard=drag.px>=br.left-8&&drag.px<=br.right+8&&drag.py>=br.top-8&&drag.py<=br.bottom+8;
+  const over=document.elementFromPoint(drag.px,drag.py);
+  drag.overPanel=!!(over&&over.closest&&over.closest('#panel'));
+  const p=pById(drag.pid);
+  panelEl.classList.toggle('drop',drag.overPanel&&!!(p&&p.at));
+  if(!drag.overPanel){
+    for(const [r,c] of drag.cells){
+      const ce=cellMap.get((ar+r)+','+(ac+c));
+      if(ce){const s=ce.querySelector('.slot');s.classList.add(drag.valid?'t-ok':'t-bad');drag.hi.push(s);}
+    }
+  }
+}
+function onMove(e){
+  if(!drag) return;
+  drag.px=e.clientX; drag.py=e.clientY;
+  if(!drag.active){
+    if(Math.hypot(drag.px-drag.sx,drag.py-drag.sy)<5) return;
+    if(!activate()) return;
+  }
+  moveGhost(); evaluate();
+}
+function rotateDrag(){
+  const p=pById(drag.pid); if(!p) return;
+  const mr=Math.max(...drag.cells.map(x=>x[0]));
+  drag.rot=(drag.rot+1)%4;
+  drag.cells=rotated(p.shape,drag.rot);
+  drag.grab=[drag.grab[1],mr-drag.grab[0]];
+  drag.off={x:(drag.grab[1]+.5)*CELL,y:(drag.grab[0]+.5)*CELL};
+  buildGhost(p); moveGhost(); evaluate(); schedulePresence(true);
+}
+function onCtx(e){
+  if(drag&&drag.active){e.preventDefault();rotateDrag();}
+}
+function endDrag(){
+  window.removeEventListener('pointermove',onMove);
+  window.removeEventListener('pointerup',onUp);
+  window.removeEventListener('pointercancel',onCancel);
+  window.removeEventListener('contextmenu',onCtx);
+  const was=drag&&drag.active;
+  if(drag){
+    if(drag.ghost) drag.ghost.remove();
+    clearHi();
+    boardEl.querySelectorAll('.cell.lifted').forEach(c=>{if(!heldBy(c.dataset.pid)) c.classList.remove('lifted');});
+  }
+  document.body.classList.remove('dragging');
+  panelEl.classList.remove('drop');
+  drag=null;
+  if(was) schedulePresence(true);
+  flushPending();
+}
+function onCancel(){endDrag();}
+function onUp(e){
+  if(!drag) return;
+  const d=drag;
+  if(!d.active){
+    endDrag();
+    const p=pById(d.pid); if(!p) return;
+    if(d.src==='board'){selected=(selected===d.pid)?null:d.pid;positionTool();}
+    else if(p.at){focusProject(d.pid);}
+    return;
+  }
+  d.px=e.clientX; d.py=e.clientY; evaluate();
+  const p=pById(d.pid);
+  endDrag();
+  if(!p) return;
+  if(d.valid&&d.overBoard&&!d.overPanel){
+    selected=null;
+    placeProject(p.id,{r:d.target.r,c:d.target.c},d.rot);
+  }else if(p.at&&(d.overPanel||!d.overBoard)){
+    selected=null;
+    R('board/projects/'+p.id).update({at:null,rot:d.rot});
+  }else if(d.overBoard&&!d.overPanel){
+    toast('Сюда проект не помещается');
+  }
+}
+
+/* ---------- перетаскивание персонажей (мастер) ---------- */
+let rdrag=null;
+function startRowDrag(e,idx){
+  const ch=state.chars[idx]; if(!ch) return;
+  rdrag={idx,id:ch.id,sy:e.clientY,active:false,t:idx,rows:null};
+  window.addEventListener('pointermove',rMove);
+  window.addEventListener('pointerup',rUp);
+  window.addEventListener('pointercancel',rCancel);
+  e.preventDefault();
+}
+function rMove(e){
+  if(!rdrag) return;
+  const dy=e.clientY-rdrag.sy, n=state.chars.length, idx=rdrag.idx;
+  if(!rdrag.active){
+    if(Math.abs(dy)<4) return;
+    rdrag.active=true; rdrag.rows=[...rowsEl.children];
+    rdrag.rows[idx].classList.add('lifted');
+    markEl.hidden=false; closePop();
+    document.body.classList.add('dragging');
+  }
+  const d=Math.max(-idx*CELL-10,Math.min((n-1-idx)*CELL+10,dy));
+  rdrag.rows[idx].style.transform='translateY('+d+'px)';
+  const t=Math.max(0,Math.min(n-1,Math.round(idx+d/CELL)));
+  rdrag.t=t;
+  rdrag.rows.forEach((r,j)=>{
+    if(j===idx) return;
+    let s=0;
+    if(idx<t&&j>idx&&j<=t) s=-CELL; else if(idx>t&&j<idx&&j>=t) s=CELL;
+    r.style.transform=s?'translateY('+s+'px)':'';
+  });
+  markEl.style.top=(t*CELL)+'px';
+}
+function rEnd(){
+  window.removeEventListener('pointermove',rMove);
+  window.removeEventListener('pointerup',rUp);
+  window.removeEventListener('pointercancel',rCancel);
+  document.body.classList.remove('dragging');
+  markEl.hidden=true;
+}
+function rCancel(){const was=rdrag&&rdrag.active;rdrag=null;rEnd();if(was) render();else flushPending();}
+function rUp(){
+  const d=rdrag; rdrag=null; rEnd();
+  if(!d||!d.active){flushPending();return;}
+  if(d.t!==d.idx){
+    const n=reorderChars(d.id,d.t);
+    if(n) toast('Проектов вернулось в список, потому что они больше не помещаются: '+n);
+  }else render();
+}
+
+/* ---------- окна ---------- */
+let modalEl=null, modalLocked=false, entryRefresh=null;
+function closeModal(){if(modalEl){modalEl.remove();modalEl=null;}modalLocked=false;entryRefresh=null;}
+function openModal(build,opts){
+  closeModal(); closePop();
+  modalLocked=!!(opts&&opts.locked);
+  const ov=el('div','overlay'), m=el('div','modal');
+  ov.appendChild(m);
+  ov.addEventListener('pointerdown',e=>{if(e.target===ov&&!modalLocked)closeModal();});
+  document.body.appendChild(ov); modalEl=ov;
+  build(m,closeModal);
+  const f=m.querySelector('input[type=text],input[type=password]'); if(f&&!(opts&&opts.noFocus)) f.focus();
+}
+
+function passwordForm(onOk){
+  const f=el('form');
+  f.innerHTML='<label class="l" for="pw-in">Пароль мастера</label>'
+    +'<input id="pw-in" type="password" autocomplete="off">'
+    +'<p class="err" id="pw-err" hidden>Неверный пароль</p>'
+    +'<div class="mactions"><button class="btn primary" type="submit">Войти</button></div>';
+  f.addEventListener('submit',e=>{
+    e.preventDefault();
+    if(f.querySelector('#pw-in').value===MASTER_PASSWORD) onOk();
+    else f.querySelector('#pw-err').hidden=false;
+  });
+  return f;
+}
+function passwordModal(){
+  openModal((m,close)=>{
+    m.innerHTML='<h3>Режим мастера</h3>';
+    const f=passwordForm(becomeMaster);
+    const cancel=el('button','btn'); cancel.type='button'; cancel.textContent='Отмена'; cancel.onclick=close;
+    f.querySelector('.mactions').appendChild(cancel);
+    m.appendChild(f);
+  });
+}
+function entryModal(){
+  openModal((m,close)=>{
+    m.innerHTML='<h3>Вход на доску</h3>'
+      +'<p class="note">Выберите свой цвет. Так остальные увидят ваш курсор и то, что вы двигаете.</p>'
+      +'<div class="cpick" id="cp"></div>'
+      +'<hr class="hr"><button class="btn" type="button" id="em">Я мастер</button><div id="mf" hidden></div>'
+      +'<hr class="hr"><button class="btn" type="button" id="rc">Сбросить занятые цвета</button>'
+      +'<p class="note">Если ваш цвет завис как «занят», нажмите дважды. Цвета освободятся, данные игры не изменятся. Доступно раз в 5 минут.</p>';
+    const cp=m.querySelector('#cp'), mf=m.querySelector('#mf');
+    mf.appendChild(passwordForm(becomeMaster));
+    m.querySelector('#rc').onclick=e=>tryReset(e.currentTarget);
+    m.querySelector('#em').onclick=()=>{
+      mf.hidden=!mf.hidden;
+      if(!mf.hidden) mf.querySelector('input').focus();
+    };
+    entryRefresh=()=>{
+      const sig=PCOLORS.map(c=>colorBusy(c.k)?1:0).join('');
+      if(cp._sig===sig) return; cp._sig=sig;
+      cp.innerHTML='';
+      PCOLORS.forEach(c=>{
+        const taken=colorBusy(c.k);
+        const b=el('button','cbtn'); b.type='button'; b.dataset.k=c.k; b.disabled=!!taken;
+        b.innerHTML='<span class="swc" style="background:'+c.v+'"></span><span>'+c.n+'</span>'+(taken?'<small class="muted">занят</small>':'');
+        b.onclick=()=>pickColor(c.k);
+        cp.appendChild(b);
+      });
+    };
+    entryRefresh();
+  },{locked:true,noFocus:true});
+}
+
+function mineModal(){
+  if(me.role!=='player') return;
+  const data={len:5};
+  openModal((m,close)=>{
+    const d=mainData[me.color];
+    m.innerHTML='<h3>Добавить моего персонажа</h3>'
+      +'<p class="muted" style="margin:0 0 10px">Персонажи берутся с вкладки «Главная». Один персонаж добавляется только один раз.</p>'
+      +'<label class="l">Длина линии, клеток</label>'
+      +'<div class="stepper"><button class="btn" type="button" id="cf-minus" aria-label="Меньше">−</button><output id="cf-len">'+data.len+'</output><button class="btn" type="button" id="cf-plus" aria-label="Больше">+</button></div>'
+      +'<div class="mlist" id="mlist" style="display:flex;flex-direction:column;gap:8px;margin:14px 0"></div>'
+      +'<div class="mactions"><button class="btn" type="button" id="cf-x">Закрыть</button></div>';
+    const lenOut=m.querySelector('#cf-len'), list=m.querySelector('#mlist');
+    m.querySelector('#cf-minus').onclick=()=>{if(data.len>1){data.len--;lenOut.textContent=data.len;}};
+    m.querySelector('#cf-plus').onclick=()=>{if(data.len<14){data.len++;lenOut.textContent=data.len;}};
+    m.querySelector('#cf-x').onclick=close;
+    d.chars.forEach(c=>{
+      const name=charName(d,c.id), mk=c.id||'0';
+      const on=state.chars.some(x=>(x.o===me.color&&x.m===mk)||normName(x.name)===normName(name));
+      const row=el('div'); row.style.cssText='display:flex;align-items:center;justify-content:space-between;gap:10px';
+      const t=el('span'); t.textContent=name; row.appendChild(t);
+      const b=el('button','btn'+(on?'':' primary')); b.type='button'; b.textContent=on?'Уже на доске':'Добавить'; b.disabled=on;
+      b.onclick=()=>{const r=addMyChar(c.id,data.len); if(r==='dup') toast('Этот персонаж уже на доске'); else if(r==='ok') close();};
+      row.appendChild(b); list.appendChild(row);
+    });
+    if(!d.chars.length) list.textContent='На вкладке «Главная» у вас ещё нет персонажей.';
+  });
+}
+
+function charModal(id){
+  const ch=id?cById(id):null, isNew=!ch;
+  if(ch&&!canTE(ch)) return;
+  const lockName=!!(ch&&ch.o&&!isMaster());
+  const data={name:ch?ch.name:'',len:ch?ch.len:5};
+  openModal((m,close)=>{
+    m.innerHTML='<h3>'+(isNew?'Новый персонаж':'Персонаж')+'</h3>'
+      +'<label class="l" for="cf-name">Имя</label>'
+      +'<input id="cf-name" type="text" maxlength="40" autocomplete="off" value="'+esc(data.name)+'"'+(lockName?' disabled':'')+'>'
+      +'<label class="l">Длина линии, клеток</label>'
+      +'<div class="stepper"><button class="btn" type="button" id="cf-minus" aria-label="Меньше">−</button><output id="cf-len">'+data.len+'</output><button class="btn" type="button" id="cf-plus" aria-label="Больше">+</button></div>'
+      +'<div class="mactions"><button class="btn primary" type="button" id="cf-ok">Сохранить</button>'
+      +'<button class="btn" type="button" id="cf-x">Отмена</button><span class="spacer"></span>'
+      +(isNew?'':'<button class="btn danger" type="button" id="cf-del">'+(lockName?'Убрать с доски':'Удалить')+'</button>')+'</div>';
+    const nameIn=m.querySelector('#cf-name'), lenOut=m.querySelector('#cf-len');
+    m.querySelector('#cf-minus').onclick=()=>{if(data.len>1){data.len--;lenOut.textContent=data.len;}};
+    m.querySelector('#cf-plus').onclick=()=>{if(data.len<14){data.len++;lenOut.textContent=data.len;}};
+    m.querySelector('#cf-x').onclick=close;
+    m.querySelector('#cf-ok').onclick=()=>{
+      const name=nameIn.value.trim();
+      if(!name){nameIn.focus();toast('Введите имя персонажа');return;}
+      if(nameTaken(name,ch?ch.id:null)){nameIn.focus();toast('Персонаж с таким именем уже есть на доске');return;}
+      const n=saveChar(ch?ch.id:null,name,data.len);
+      close();
+      if(n) toast('Проектов вернулось в список, потому что они больше не помещаются: '+n);
+    };
+    const del=m.querySelector('#cf-del');
+    if(del) del.onclick=()=>{
+      if(!del.classList.contains('armed')){del.classList.add('armed');del.textContent='Нажмите ещё раз';return;}
+      const n=deleteChar(ch.id);
+      close();
+      if(n) toast('Проектов вернулось в список, потому что они больше не помещаются: '+n);
+    };
+  });
+}
+
+function projectModal(id){
+  const p=id?pById(id):null, isNew=!p;
+  const d={name:p?p.name:'',desc:p?p.desc:'',color:p?p.color:COLORS[state.projects.length%COLORS.length],
+           cells:new Set(p?norm(p.shape).map(([r,c])=>r+','+c):[])};
+  openModal((m,close)=>{
+    m.innerHTML='<h3>'+(isNew?'Новый проект':'Проект')+'</h3>'
+      +'<label class="l" for="pf-name">Название</label>'
+      +'<input id="pf-name" type="text" maxlength="50" autocomplete="off" value="'+esc(d.name)+'">'
+      +'<label class="l">Форма: кликайте или ведите мышкой по клеткам</label>'
+      +'<div class="egrid" id="pf-grid"></div>'
+      +'<label class="l">Цвет</label><div class="swatches" id="pf-sw"></div>'
+      +'<label class="l" for="pf-desc">Описание (игроки увидят его по значку «i»)</label>'
+      +'<textarea id="pf-desc" rows="4" maxlength="1000">'+esc(d.desc)+'</textarea>'
+      +'<div class="mactions"><button class="btn primary" type="button" id="pf-ok">Сохранить</button>'
+      +'<button class="btn" type="button" id="pf-x">Отмена</button><span class="spacer"></span>'
+      +(isNew?'':'<button class="btn danger" type="button" id="pf-del">Удалить</button>')+'</div>';
+    const grid=m.querySelector('#pf-grid'), sw=m.querySelector('#pf-sw');
+    const nameIn=m.querySelector('#pf-name'), descIn=m.querySelector('#pf-desc');
+    grid.style.setProperty('--pc',d.color);
+    for(let r=0;r<GRID;r++) for(let c=0;c<GRID;c++){
+      const k=r+','+c, ce=el('div','ecell'+(d.cells.has(k)?' on':'')); ce.dataset.k=k; grid.appendChild(ce);
+    }
+    let paint=null;
+    const setCell=(ce,on)=>{
+      const k=ce.dataset.k;
+      if(on) d.cells.add(k); else d.cells.delete(k);
+      ce.classList.toggle('on',on);
+    };
+    grid.addEventListener('pointerdown',e=>{
+      const ce=e.target.closest('.ecell'); if(!ce) return;
+      e.preventDefault();
+      paint=!d.cells.has(ce.dataset.k); setCell(ce,paint);
+      try{grid.setPointerCapture(e.pointerId);}catch(_){}
+    });
+    grid.addEventListener('pointermove',e=>{
+      if(paint===null) return;
+      const t=document.elementFromPoint(e.clientX,e.clientY), ce=t&&t.closest&&t.closest('.ecell');
+      if(ce&&grid.contains(ce)) setCell(ce,paint);
+    });
+    const stop=()=>{paint=null;};
+    grid.addEventListener('pointerup',stop); grid.addEventListener('pointercancel',stop);
+    COLORS.forEach(col=>{
+      const b=el('button','sw'+(col===d.color?' on':'')); b.type='button'; b.style.background=col;
+      b.setAttribute('aria-label','Цвет '+col);
+      b.onclick=()=>{d.color=col;grid.style.setProperty('--pc',col);sw.querySelectorAll('.sw').forEach(x=>x.classList.toggle('on',x===b));};
+      sw.appendChild(b);
+    });
+    m.querySelector('#pf-x').onclick=close;
+    m.querySelector('#pf-ok').onclick=()=>{
+      const name=nameIn.value.trim();
+      if(!name){nameIn.focus();toast('Введите название проекта');return;}
+      if(!d.cells.size){toast('Нарисуйте форму проекта');return;}
+      const shape=norm([...d.cells].map(k=>k.split(',').map(Number)));
+      const n=saveProject(p?p.id:null,{name,desc:descIn.value.trim(),color:d.color,shape});
+      close();
+      if(n) toast('Новая форма не поместилась на прежнем месте, проект вернулся в список');
+    };
+    const del=m.querySelector('#pf-del');
+    if(del) del.onclick=()=>{
+      if(!del.classList.contains('armed')){del.classList.add('armed');del.textContent='Нажмите ещё раз';return;}
+      if(selected===p.id) selected=null;
+      deleteProject(p.id);
+      close();
+    };
+  });
+}
+
+/* ---------- главная таблица: данные ---------- */
+const numOrNull=v=>(v===null||v===undefined||v==='')?null:(Number.isFinite(+v)?+v:null);
+const byId=(a,b)=>a.id<b.id?-1:(a.id>b.id?1:0);
+function parseChar(r){
+  const courts=[];
+  for(let t=1;t<=TIERS;t++){
+    courts.push(Object.entries((r.courts&&r.courts['t'+t])||{}).map(([id,c])=>({
+      id,n:String((c&&c.n)||''),l:numOrNull(c&&c.l),off:!!(c&&c.off)
+    })).sort(byId));
+  }
+  return{
+    ch:String(r.ch||''),lv:numOrNull(r.lv),
+    stories:Object.entries(r.stories||{}).map(([id,s])=>({
+      id,n:String((s&&s.n)||''),p:numOrNull(s&&s.p),c:String((s&&s.c)||'')
+    })).sort(byId),
+    courts
+  };
+}
+// у игрока один основной персонаж (поля прямо в строке цвета) и дополнительные в alt/{id}
+function parseMain(val){
+  const out={};
+  PCOLORS.forEach(pc=>{
+    const r=(val&&val[pc.k])||{};
+    const chars=[Object.assign({id:'',base:''},parseChar(r))];
+    Object.entries(r.alt||{}).map(([id,a])=>Object.assign({id,base:'alt/'+id+'/'},parseChar(a||{})))
+      .sort(byId).forEach(c=>chars.push(c));
+    out[pc.k]={
+      nick:String(r.nick||''),chars,
+      avc:safeColor(r.avc,''),avi:(typeof r.avi==='string'&&r.avi.length<40000&&IMG_RE.test(r.avi))?r.avi:'',
+      lenses:Object.entries(r.lenses||{}).map(([id,l])=>({
+        id,n:String((l&&l.n)||''),v:numOrNull(l&&l.v),g:numOrNull(l&&l.g),d:String((l&&l.d)||''),c:String((l&&l.c)||'')
+      })).sort(byId)
+    };
+  });
+  return out;
+}
+function parseCycle(m){
+  return{open:!!(m&&m.cycle&&m.cycle.open),checks:(m&&m.checks&&typeof m.checks==='object')?m.checks:{}};
+}
+const IMG_RE=/^data:image\/(jpeg|png);base64,[A-Za-z0-9+\/=]+$/;
+let mainData=parseMain(null), cyc=parseCycle(null);
+const CHECKS=['Спишите линзу на 1, если она не росла','Расход и доход денег','Обработайте ОТ и заживление травм','Обработайте Активацию постоянных бонусов/базы','Получите внимание','Поставили расписание?'];
+let mainPending=false, ptrDown=false, focusNext=null, editMode=false, lensTarget='blue';
+
+const canEdit=k=>!!(db&&me.role&&(isMaster()||me.color===k));
+const editing=k=>editMode&&canEdit(k);
+const MP=k=>'board/main/'+k;
+function mset(k,path,v){if(canEdit(k)) R(MP(k)+'/'+path).set(v);}
+function addItem(k,path){
+  if(!canEdit(k)) return;
+  const key=R(MP(k)+'/'+path).push().key;
+  focusNext=key;
+  R(MP(k)+'/'+path+'/'+key).set({n:''});
+}
+function delCourt(k,ch,t,cid){
+  if(!canEdit(k)) return;
+  const u={}; u[ch.base+'courts/t'+t+'/'+cid]=null;
+  ch.stories.forEach(s=>{if(s.c===cid) u[ch.base+'stories/'+s.id+'/c']=null;});
+  R(MP(k)).update(u);
+}
+function addChar(k){
+  if(!canEdit(k)) return;
+  const key=R(MP(k)+'/alt').push().key;
+  focusNext=key;
+  R(MP(k)+'/alt/'+key).set({ch:''});
+}
+// удаляется персонаж вместе с его историями и дворами; его линзы переходят к основному персонажу
+function delChar(k,ch){
+  if(!canEdit(k)||!ch.id) return;
+  const u={}; u['alt/'+ch.id]=null;
+  mainData[k].lenses.forEach(l=>{if(l.c===ch.id) u['lenses/'+l.id+'/c']=null;});
+  R(MP(k)).update(u);
+}
+const charName=(d,cid)=>{
+  const i=Math.max(0,d.chars.findIndex(c=>c.id===cid));
+  return d.chars[i].ch||(i?'Персонаж '+(i+1):'Персонаж');
+};
+function clearRow(k){if(isMaster()&&db) R(MP(k)).remove();}
+
+/* ---------- кружок игрока: цвет или картинка ---------- */
+const AVC=['#2F6FED','#E5484D','#F2B705','#22A559','#F08A24','#8A5CD0','#C44E94','#1F8FA6','#6B7A8F','#7A4B2A','#111827','#14B8A6','#84CC16','#0EA5E9','#E879F9'];
+function colorOf(k){const d=mainData[k];return (d&&d.avc)||(PCK[k]?PCK[k].v:'#888');}
+function dotEl(k,cls){
+  const d=mainData[k], n=el('span','pdot'+(cls?' '+cls:''));
+  if(d&&d.avi){n.classList.add('img');n.style.backgroundImage='url("'+d.avi+'")';}
+  else n.style.background=colorOf(k);
+  return n;
+}
+function makeDotEditable(n,k){
+  if(!canEdit(k)) return n;
+  n.classList.add('click'); n.tabIndex=0; n.setAttribute('role','button');
+  n.title='Изменить цвет или картинку';
+  n.setAttribute('aria-label','Изменить цвет или картинку');
+  n.addEventListener('click',e=>{e.stopPropagation();avMenu(n,k);});
+  n.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();avMenu(n,k);}});
+  return n;
+}
+let avEl=null;
+function closeAv(){if(avEl){avEl.remove();avEl=null;}}
+function avMenu(anchor,k){
+  const reopen=avEl&&avEl.dataset.k===k&&avEl._a===anchor;
+  closeAv(); if(reopen) return;
+  const m=el('div','avmenu'); m.dataset.k=k; m._a=anchor;
+  const h=el('h4'); h.textContent='Цвет кружка'; m.appendChild(h);
+  const sw=el('div','swatches');
+  AVC.forEach(c=>{
+    const b=el('button','sw'+(mainData[k].avc===c&&!mainData[k].avi?' on':'')); b.type='button'; b.style.background=c;
+    b.setAttribute('aria-label','Цвет '+c);
+    b.onclick=()=>{R(MP(k)).update({avc:c,avi:null});closeAv();};
+    sw.appendChild(b);
+  });
+  m.appendChild(sw);
+  const pic=el('button','btn'); pic.type='button'; pic.textContent='Своя картинка…';
+  pic.onclick=()=>{closeAv();pickImage(k);};
+  const rst=el('button','btn'); rst.type='button'; rst.textContent='Вернуть по умолчанию';
+  rst.onclick=()=>{R(MP(k)).update({avc:null,avi:null});closeAv();};
+  m.appendChild(pic); m.appendChild(rst);
+  document.body.appendChild(m); avEl=m;
+  const r=anchor.getBoundingClientRect(), mw=m.offsetWidth, mh=m.offsetHeight;
+  let x=Math.max(8,Math.min(window.innerWidth-mw-8,r.left)), y=r.bottom+8;
+  if(y+mh>window.innerHeight-8) y=Math.max(8,r.top-mh-8);
+  m.style.left=x+'px'; m.style.top=y+'px';
+}
+document.addEventListener('pointerdown',e=>{if(avEl&&!e.target.closest('.avmenu')&&!e.target.closest('.pdot.click')) closeAv();},true);
+document.addEventListener('keydown',e=>{if(e.key==='Escape') closeAv();});
+// картинка сжимается до 96×96, чтобы не раздувать базу
+function pickImage(k){
+  if(!canEdit(k)) return;
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/png,image/jpeg,image/webp,image/gif'; inp.hidden=true;
+  document.body.appendChild(inp);
+  inp.onchange=()=>{
+    const f=inp.files&&inp.files[0]; inp.remove();
+    if(!f) return;
+    if(f.size>8*1024*1024){toast('Файл слишком большой, выберите поменьше (до 8 МБ)');return;}
+    const rd=new FileReader();
+    rd.onload=()=>{
+      const img=new Image();
+      img.onload=()=>{
+        const S=96, c=document.createElement('canvas'); c.width=S; c.height=S;
+        const g=c.getContext('2d'), side=Math.min(img.width,img.height);
+        g.drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,S,S);
+        R(MP(k)).update({avi:c.toDataURL('image/jpeg',0.82),avc:null});
+        toast('Картинка обновлена');
+      };
+      img.onerror=()=>toast('Не удалось открыть эту картинку');
+      img.src=rd.result;
+    };
+    rd.readAsDataURL(f);
+  };
+  inp.click();
+}
+
+/* ---------- всплывающая подсказка (появляется сразу, работает и по клику) ---------- */
+let tipEl=null;
+function hideTip(){if(tipEl){tipEl.remove();tipEl=null;}}
+function showTip(anchor,text){
+  hideTip();
+  const t=el('div','tip'); t.textContent=text; t.setAttribute('role','tooltip');
+  document.body.appendChild(t); tipEl=t;
+  const r=anchor.getBoundingClientRect(), tw=t.offsetWidth, th=t.offsetHeight;
+  let x=r.left+r.width/2-tw/2; x=Math.max(8,Math.min(window.innerWidth-tw-8,x));
+  let y=r.top-th-8; if(y<8) y=r.bottom+8;
+  t.style.left=x+'px'; t.style.top=y+'px';
+}
+function attachTip(n,text){
+  n.tabIndex=0;
+  n.addEventListener('mouseenter',()=>showTip(n,text));
+  n.addEventListener('mouseleave',hideTip);
+  n.addEventListener('focus',()=>showTip(n,text));
+  n.addEventListener('blur',hideTip);
+  n.addEventListener('click',()=>showTip(n,text));
+}
+
+/* ---------- главная таблица: отрисовка ---------- */
+function confirmBtn(b,fn){
+  if(b.classList.contains('armed')){clearTimeout(b._t);b.classList.remove('armed');fn();return;}
+  b._o=b.textContent; b.classList.add('armed');
+  if(b.classList.contains('wide')) b.textContent='Точно?';
+  b._t=setTimeout(()=>{b.classList.remove('armed');b.textContent=b._o;},2500);
+}
+const enterBlur=e=>{if(e.key==='Enter'){e.preventDefault();e.target.blur();}};
+function mText(s,cls){const n=el('span','tx'+(cls?' '+cls:''));n.textContent=s;return n;}
+function mInput(val,ph,commit,fid,size){
+  const i=el('input','m-in tx'); i.type='text'; i.size=size||10; i.value=val; i.title=val; i.placeholder=ph; i.maxLength=60; i.autocomplete='off';
+  if(fid) i.dataset.fid=fid;
+  i.addEventListener('change',()=>commit(i.value));
+  i.addEventListener('keydown',enterBlur);
+  return i;
+}
+function mNum(val,ph,commit){
+  const i=el('input','m-in m-sq'); i.type='text'; i.inputMode='numeric'; i.maxLength=5; i.autocomplete='off';
+  const orig=val===null?'':String(val);
+  i.value=orig; i.placeholder=ph;
+  i.addEventListener('change',()=>{
+    const s=i.value.trim();
+    if(s===''){commit(null);return;}
+    const n=parseInt(s,10);
+    if(!Number.isFinite(n)){i.value=orig;return;}
+    commit(Math.max(-9999,Math.min(99999,n)));
+  });
+  i.addEventListener('keydown',enterBlur);
+  i.addEventListener('focus',()=>i.select());
+  return i;
+}
+function mBtn(txt,cls,title,fn){
+  const b=el('button','m-b'+(cls?' '+cls:'')); b.type='button'; b.textContent=txt; if(title) b.title=title; b.onclick=fn; return b;
+}
+function addBtn(title,fn){
+  const b=el('button','m-add'); b.type='button'; b.textContent='+'; b.title=title; b.setAttribute('aria-label',title); b.onclick=fn; return b;
+}
+
+function mainRows(pc){
+  const d=mainData[pc.k];
+  return d.chars.map((ch,i)=>charRow(pc,d,ch,i,d.chars.length));
+}
+function charRow(pc,d,ch,idx,n){
+  const k=pc.k, ed=editing(k);
+  const tr=el('tr',((me.color===k&&!isMaster())?'mine':'')+(idx===0?' pstart':''));
+  const courtsAll=[]; ch.courts.forEach((arr,i)=>arr.forEach(c=>courtsAll.push({t:i+1,c})));
+  const courtById=id=>courtsAll.find(x=>x.c.id===id);
+  const linked=new Set(ch.stories.map(s=>s.c).filter(id=>id&&courtById(id)));
+
+  // игрок (одна ячейка на все строки персонажей)
+  let td;
+  if(idx===0){
+  td=el('td','pl'); td.rowSpan=n;
+  const wrap=el('div','plw');
+  const dot=dotEl(k,colorsTaken[k]?'':'free');
+  dot.title=pc.n+(colorsTaken[k]?'':' (цвет не занят)');
+  makeDotEditable(dot,k);
+  wrap.appendChild(dot);
+  wrap.appendChild(ed?mInput(d.nick,'Ник',v=>mset(k,'nick',v),undefined,8):mText(d.nick));
+  td.appendChild(wrap);
+  if(isMaster()&&editMode){
+    const cb=mBtn('Очистить','wide','Очистить всю строку',()=>confirmBtn(cb,()=>clearRow(k)));
+    td.appendChild(cb);
+  }
+  if(ed){
+    td.appendChild(mBtn('+ Персонаж','wide','Добавить ещё одного персонажа',()=>addChar(k)));
+  }
+  tr.appendChild(td);
+  }
+
+  // персонаж и уровень
+  td=el('td','ch');
+  if(ed){
+    const w=el('div','ent');
+    w.appendChild(mInput(ch.ch,idx?'Персонаж '+(idx+1):'Персонаж',v=>mset(k,ch.base+'ch',v),ch.id||undefined,8));
+    if(ch.id){const xb=mBtn('×','','Удалить персонажа',()=>confirmBtn(xb,()=>delChar(k,ch)));w.appendChild(xb);}
+    td.appendChild(w);
+  }else td.appendChild(mText(ch.ch));
+  tr.appendChild(td);
+  td=el('td','lv');
+  td.appendChild(ed?mNum(ch.lv,'—',v=>mset(k,ch.base+'lv',v)):mText(ch.lv===null?'':String(ch.lv)));
+  tr.appendChild(td);
+
+  // репутация (истории)
+  td=el('td','rep');
+  ch.stories.forEach(s=>{
+    const cur=courtById(s.c);
+    const row=el('div','ent');
+    // риск: остаток истории не больше уровня связанного двора, при следующем списании она кончится
+    const risk=!!(cur&&s.p!==null&&cur.c.l!==null&&cur.c.l>0&&s.p<=cur.c.l);
+    const mkRisk=()=>{const r=el('span','risk');r.textContent='!';r.dataset.tip='РИСК ПОТЕРИ ИСТОРИИ!';r.setAttribute('aria-label','РИСК ПОТЕРИ ИСТОРИИ!');attachTip(r,'РИСК ПОТЕРИ ИСТОРИИ!');return r;};
+    if(ed){
+      row.appendChild(mInput(s.n,'История',v=>mset(k,ch.base+'stories/'+s.id+'/n',v),s.id,7));
+      row.appendChild(mNum(s.p,'0',v=>mset(k,ch.base+'stories/'+s.id+'/p',v)));
+      if(risk) row.appendChild(mkRisk());
+      const sel=el('select','m-sel'); sel.setAttribute('aria-label','Связанный двор');
+      sel.appendChild(new Option('— двор —',''));
+      courtsAll.forEach(x=>sel.appendChild(new Option('T'+x.t+' '+(x.c.n||'без названия'),x.c.id)));
+      sel.value=cur?cur.c.id:'';
+      sel.addEventListener('change',()=>{mset(k,ch.base+'stories/'+s.id+'/c',sel.value||null);sel.blur();});
+      row.appendChild(sel);
+      const xb=mBtn('×','','Удалить историю',()=>confirmBtn(xb,()=>mset(k,ch.base+'stories/'+s.id,null)));
+      row.appendChild(xb);
+    }else{
+      const parts=[s.n];
+      if(s.p!==null) parts.push(String(s.p));
+      if(cur) parts.push('['+(cur.c.n||'двор')+']');
+      row.appendChild(mText(parts.filter(Boolean).join(' ')));
+      if(risk) row.appendChild(mkRisk());
+    }
+    td.appendChild(row);
+  });
+  if(ed) td.appendChild(addBtn('Добавить историю',()=>addItem(k,ch.base+'stories')));
+  tr.appendChild(td);
+
+  // дворы T1..T5
+  ch.courts.forEach((arr,i)=>{
+    const t=i+1, cell=el('td','ct');
+    arr.forEach(c=>{
+      let cls='ent court';
+      if(c.off) cls+=' off';
+      else if(ch.lv!==null&&c.l!==null&&c.l>ch.lv) cls+=' hot';
+      if(linked.has(c.id)) cls+=' strong';
+      const row=el('div',cls);
+      if(ed){
+        const base=ch.base+'courts/t'+t+'/'+c.id;
+        row.appendChild(mInput(c.n,'Двор',v=>mset(k,base+'/n',v),c.id,7));
+        row.appendChild(mNum(c.l,'0',v=>mset(k,base+'/l',v)));
+        row.appendChild(mBtn('О',c.off?'on':'',c.off?'Включить двор':'Отключить двор',()=>mset(k,base+'/off',c.off?null:true)));
+        const xb=mBtn('×','','Удалить двор',()=>confirmBtn(xb,()=>delCourt(k,ch,t,c.id)));
+        row.appendChild(xb);
+      }else{
+        row.appendChild(mText((c.n+(c.l!==null?' '+c.l:'')).trim()));
+      }
+      cell.appendChild(row);
+    });
+    if(ed) cell.appendChild(addBtn('Добавить двор в T'+t,()=>addItem(k,ch.base+'courts/t'+t)));
+    tr.appendChild(cell);
+  });
+
+  return tr;
+}
+// зелёная: достигла цели; красная: дошла до нуля. Больше никакой автоматики.
+function lensCls(l){
+  if(l.v===null) return '';
+  if(l.g!==null&&l.v>=l.g) return 'done';
+  if(l.v<=0) return 'warn';
+  return '';
+}
+// удалить линзу: мастер всегда; игрок (своего цвета) только достигнутую или пустую заготовку
+function canDelLens(k,l){
+  if(isMaster()) return true;
+  if(!canEdit(k)) return false;
+  return lensCls(l)==='done'||(!l.n&&l.v===null&&l.g===null&&!l.d);
+}
+
+/* ---------- цикл и чекбоксы ---------- */
+function hasData(k){
+  const d=mainData[k];
+  return !!(d.nick||d.lenses.length||d.chars.length>1||d.chars.some(c=>c.ch||c.lv!==null||c.stories.length||c.courts.some(a=>a.length)));
+}
+const activePlayers=()=>PCOLORS.filter(pc=>hasData(pc.k));
+// строка показывается, пока цвет занят игроком или в ней есть записи; пустой свободный цвет скрыт у всех, включая мастера
+const visibleColors=()=>PCOLORS.filter(pc=>colorsTaken[pc.k]||hasData(pc.k));
+function toggleCheck(k,i){
+  if(!cyc.open||!canEdit(k)) return;
+  const on=!!(cyc.checks[k]&&cyc.checks[k]['i'+i]);
+  R('board/main/checks/'+k+'/i'+i).set(on?null:true);
+}
+function renderChecks(){
+  const box=$('#chk'); box.hidden=!cyc.open;
+  if(!cyc.open) return;
+  const t=$('#ck'); t.innerHTML='';
+  const pl=activePlayers();
+  if(!pl.length){t.innerHTML='<tbody><tr><td>Пока нет заполненных строк игроков.</td></tr></tbody>';return;}
+  const head=el('tr'), h0=el('th'); h0.textContent='Пункт'; head.appendChild(h0);
+  pl.forEach(pc=>{
+    const d=mainData[pc.k], got=CHECKS.filter((_,i)=>cyc.checks[pc.k]&&cyc.checks[pc.k]['i'+i]).length;
+    const th=el('th'), dot=dotEl(pc.k);
+    th.appendChild(dot); th.appendChild(document.createTextNode(d.nick||pc.n));
+    const sm=el('small'); sm.textContent=got+'/'+CHECKS.length; th.appendChild(sm);
+    head.appendChild(th);
+  });
+  const th=el('thead'); th.appendChild(head); t.appendChild(th);
+  const tb=el('tbody');
+  CHECKS.forEach((txt,i)=>{
+    const tr=el('tr'), c0=el('td'); c0.textContent=txt; tr.appendChild(c0);
+    pl.forEach(pc=>{
+      const on=!!(cyc.checks[pc.k]&&cyc.checks[pc.k]['i'+i]);
+      const td=el('td'), n=el(canEdit(pc.k)?'button':'span','ck-b'+(on?'':' no'));
+      if(n.tagName==='BUTTON'){n.type='button';n.onclick=()=>toggleCheck(pc.k,i);}
+      n.style.color=colorOf(pc.k); n.innerHTML=on?ICON.check:'✕';
+      n.setAttribute('role','img'); n.setAttribute('aria-label',(on?'Отмечено: ':'Не отмечено: ')+txt);
+      td.appendChild(n); tr.appendChild(td);
+    });
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+function startCycle(){
+  if(!isMaster()||!db) return;
+  R('board/main').update({'cycle/open':true,'checks':null});
+}
+function endCycle(){
+  if(!isMaster()||!db) return;
+  const u={'cycle/open':null,'checks':null}; let sN=0;
+  PCOLORS.forEach(pc=>{
+    mainData[pc.k].chars.forEach(ch=>{
+      const all=[]; ch.courts.forEach(a=>a.forEach(c=>all.push(c)));
+      ch.stories.forEach(s=>{
+        if(s.p===null||!s.c) return;
+        const c=all.find(x=>x.id===s.c);
+        if(!c||c.l===null||c.l===0) return;
+        u[pc.k+'/'+ch.base+'stories/'+s.id+'/p']=s.p-c.l; sN++;
+      });
+    });
+  });
+  R('board/main').update(u);
+  toast('Цикл завершён. Мощь списана у историй: '+sN);
+}
+
+/* ---------- линзы: общий список под таблицей ---------- */
+function addLens(k){addItem(k,'lenses');}
+function lensModal(k,id){
+  const l=mainData[k].lenses.find(x=>x.id===id); if(!l) return;
+  const ed=canEdit(k), pc=PCK[k];
+  openModal((m,close)=>{
+    m.innerHTML='<h3>'+esc(l.n||'Линза')+'</h3><p class="note">Владелец: '+esc(mainData[k].nick||pc.n)+'</p>';
+    if(ed){
+      const lab=el('label','l'); lab.textContent='Описание линзы'; lab.htmlFor='ld-t';
+      const ta=el('textarea'); ta.id='ld-t'; ta.rows=6; ta.maxLength=2000; ta.value=l.d;
+      const act=el('div','mactions');
+      const ok=el('button','btn primary'); ok.type='button'; ok.textContent='Сохранить';
+      const no=el('button','btn'); no.type='button'; no.textContent='Отмена';
+      ok.onclick=()=>{mset(k,'lenses/'+id+'/d',ta.value.trim()||null);close();};
+      no.onclick=close;
+      act.appendChild(ok); act.appendChild(no);
+      m.appendChild(lab); m.appendChild(ta); m.appendChild(act);
+    }else{
+      const p=el('p'); p.style.whiteSpace='pre-wrap'; p.textContent=l.d||'Описания пока нет.';
+      m.appendChild(p);
+      const act=el('div','mactions'), no=el('button','btn'); no.type='button'; no.textContent='Закрыть'; no.onclick=close;
+      act.appendChild(no); m.appendChild(act);
+    }
+  });
+}
+function renderLenses(){
+  const t=$('#lt'), ctl=$('#lctl'); t.innerHTML=''; ctl.innerHTML='';
+  if(me.role){
+    if(isMaster()){
+      const sel=el('select','m-sel'); sel.setAttribute('aria-label','Для какого игрока создать линзу');
+      const vc=visibleColors();
+      vc.forEach(pc=>sel.appendChild(new Option(mainData[pc.k].nick||pc.n,pc.k)));
+      if(!vc.some(pc=>pc.k===lensTarget)&&vc.length) lensTarget=vc[0].k;
+      sel.value=lensTarget; sel.onchange=()=>{lensTarget=sel.value;};
+      ctl.appendChild(sel);
+    }
+    const b=el('button','btn primary'); b.type='button'; b.innerHTML=ICON.plus+'Создать';
+    b.onclick=()=>addLens(isMaster()?lensTarget:me.color);
+    ctl.appendChild(b);
+  }
+  const all=[]; PCOLORS.forEach(pc=>mainData[pc.k].lenses.forEach(l=>all.push({pc,l})));
+  if(!all.length){
+    t.innerHTML='<tbody><tr><td colspan="6">Линз пока нет.'+(me.role?' Нажмите «Создать».':'')+'</td></tr></tbody>';
+    return;
+  }
+  const th=el('thead'); th.innerHTML='<tr><th>Игрок</th><th>Персонаж</th><th>Линза</th><th>Значение</th><th></th><th></th></tr>';
+  t.appendChild(th);
+  const tb=el('tbody');
+  all.forEach(({pc,l})=>{
+    const k=pc.k, ed=canEdit(k);
+    const tr=el('tr','lens '+lensCls(l));
+    let td=el('td','pl2'); const dot=dotEl(k); dot.title=pc.n; makeDotEditable(dot,k);
+    td.appendChild(dot); td.appendChild(document.createTextNode(' '+(mainData[k].nick||pc.n))); tr.appendChild(td);
+    td=el('td','pc');
+    const dd=mainData[k], lc=dd.chars.some(c=>c.id===l.c)?l.c:'';
+    if(ed&&dd.chars.length>1){
+      const cs=el('select','m-sel'); cs.setAttribute('aria-label','Персонаж, к которому относится линза');
+      dd.chars.forEach(c=>cs.appendChild(new Option(charName(dd,c.id),c.id)));
+      cs.value=lc; cs.addEventListener('change',()=>{mset(k,'lenses/'+l.id+'/c',cs.value||null);cs.blur();});
+      td.appendChild(cs);
+    }else td.appendChild(mText(charName(dd,lc)));
+    tr.appendChild(td);
+    td=el('td','nm');
+    td.appendChild(ed?mInput(l.n,'Название линзы',v=>mset(k,'lenses/'+l.id+'/n',v),l.id,14):mText(l.n));
+    tr.appendChild(td);
+    td=el('td','nu'); const nu=el('div','ent');
+    if(ed){
+      nu.appendChild(mNum(l.v,'0',v=>mset(k,'lenses/'+l.id+'/v',v)));
+      const sep=el('span','lsep'); sep.textContent='/'; nu.appendChild(sep);
+      nu.appendChild(mNum(l.g,'цель',v=>mset(k,'lenses/'+l.id+'/g',v)));
+    }else{
+      nu.appendChild(mText((l.v!==null?l.v:'—')+' / '+(l.g!==null?l.g:'—')));
+    }
+    td.appendChild(nu); tr.appendChild(td);
+    td=el('td','ic');
+    const ib=el('button','ib info'); ib.type='button'; ib.textContent='i'; ib.title='Описание линзы'; ib.setAttribute('aria-label','Описание линзы');
+    ib.onclick=()=>lensModal(k,l.id);
+    td.appendChild(ib); tr.appendChild(td);
+    td=el('td','ic');
+    if(editMode&&canDelLens(k,l)){
+      const xb=mBtn('×','','Удалить линзу',()=>confirmBtn(xb,()=>{if(canDelLens(k,l)) mset(k,'lenses/'+l.id,null);}));
+      td.appendChild(xb);
+    }
+    tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+  t.appendChild(tb);
+}
+$('#editBtn').addEventListener('click',()=>{
+  if(!me.role) return;
+  editMode=!editMode; focusNext=null;
+  renderMain(); renderTop();
+});
+
+function renderMain(){
+  mainPending=false; hideTip();
+  const tbl=$('#mt');
+  tbl.innerHTML='<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th></tr><tr>'
+    +Array.from({length:TIERS},(_,i)=>'<th>T'+(i+1)+'</th>').join('')+'</tr></thead>';
+  const tb=el('tbody');
+  const vis=visibleColors();
+  vis.forEach(pc=>mainRows(pc).forEach(tr=>tb.appendChild(tr)));
+  if(!vis.length){
+    const tr=el('tr'), td=el('td'); td.colSpan=4+TIERS; td.textContent='Пока никто не вошёл.'; tr.appendChild(td); tb.appendChild(tr);
+  }
+  tbl.appendChild(tb);
+  renderChecks();
+  renderLenses();
+  if(focusNext){
+    const n=$('#tab-main').querySelector('[data-fid="'+focusNext+'"]'); focusNext=null;
+    if(n) n.focus();
+  }
+}
+// не перерисовываем таблицу, пока человек печатает или держит кнопку мыши, чтобы не сбить ввод и клик
+function renderMainSafe(){
+  const a=document.activeElement;
+  const typing=a&&a.closest&&a.closest('#tab-main')&&(a.tagName==='INPUT'||a.tagName==='SELECT'||a.tagName==='TEXTAREA');
+  if(typing||ptrDown){mainPending=true;return;}
+  renderMain();
+}
+function flushMain(){setTimeout(()=>{if(mainPending&&tab==='main') renderMainSafe();},0);}
+document.addEventListener('pointerdown',()=>{ptrDown=true;},true);
+document.addEventListener('pointerup',()=>{ptrDown=false;flushMain();},true);
+document.addEventListener('pointercancel',()=>{ptrDown=false;flushMain();},true);
+window.addEventListener('blur',()=>{ptrDown=false;});
+$('#tab-main').addEventListener('focusout',flushMain);
+
+/* ---------- лут: board/main/loot ---------- */
+const LP='board/main/loot', BEATS={r:'s',s:'p',p:'r'}, RPS_N={r:'Камень',s:'Ножницы',p:'Бумага'}, RPS_I={r:'✊',s:'✌️',p:'✋'};
+const objOf=a=>{const o={};a.forEach(k=>{o[k]=1;});return o;};
+const pcFlags=o=>{const x={};PCOLORS.forEach(pc=>{if(o&&o[pc.k]) x[pc.k]=1;});return x;};
+function parseLoot(m){
+  const L=(m&&m.loot&&typeof m.loot==='object')?m.loot:{};
+  const bid={},ref={},rps={},ex={};
+  PCOLORS.forEach(pc=>{
+    const b=(L.bid&&L.bid[pc.k])||{}; bid[pc.k]={};
+    Object.keys(b).forEach(id=>{const n=numOrNull(b[id]); if(n!==null&&n>0) bid[pc.k][id]=Math.floor(n);});
+    const n=numOrNull(L.x&&L.x[pc.k]); if(n!==null&&n>0) ex[pc.k]=Math.floor(n);
+  });
+  Object.keys(L.ref||{}).forEach(id=>{ref[id]=pcFlags(L.ref[id]);});
+  Object.keys(L.rps||{}).forEach(id=>{
+    const r=L.rps[id]||{}, ks=o=>PCOLORS.map(p=>p.k).filter(k=>o&&o[k]);
+    const pk={}; Object.keys(r.pk||{}).forEach(rd=>{pk[rd]={}; PCOLORS.forEach(pc=>{const v=r.pk[rd]&&r.pk[rd][pc.k]; if(v==='r'||v==='s'||v==='p') pk[rd][pc.k]=v;});});
+    rps[id]={st:String(r.st||''),by:String(r.by||''),par:ks(r.par),acc:ks(r.acc),rd:numOrNull(r.rd)||1,al:ks(r.al),bye:String(r.bye||''),win:String(r.win||''),
+      wn:pcFlags(r.wn),ls:pcFlags(r.ls),pk,lg:Object.entries(r.lg||{}).map(([i,e])=>Object.assign({id:i},e||{})).sort(byId)};
+  });
+  return{open:!!L.open,rev:!!L.rev,items:Object.entries(L.items||{}).map(([id,i])=>({id,n:String((i&&i.n)||'')})).sort(byId),
+    out:pcFlags(L.out),rdy:pcFlags(L.rdy),x:ex,bid,ref,rps};
+}
+let loot=parseLoot(null), lootEdit=false, lootPending=false; const lootShow={}, rpsSig={};
+const lootMembers=()=>PCOLORS.filter(pc=>hasData(pc.k)&&!loot.out[pc.k]).map(pc=>pc.k);
+const nickOf=k=>(mainData[k]&&mainData[k].nick)||PCK[k].n;
+const lootBudget=k=>3*loot.items.length+(loot.x[k]||0);
+const lootSpent=k=>loot.items.reduce((s,it)=>s+(loot.bid[k][it.id]||0),0);
+const lootLeft=k=>lootBudget(k)-lootSpent(k);
+function itemStatus(it,M){
+  const bids=M.filter(k=>loot.bid[k][it.id]>0);
+  if(!bids.length) return{st:'none',eff:[],T:[],top:0};
+  const top=Math.max(...bids.map(k=>loot.bid[k][it.id]));
+  const T=bids.filter(k=>loot.bid[k][it.id]===top), rf=loot.ref[it.id]||{};
+  let eff=T.filter(k=>!rf[k]); if(!eff.length) eff=T;
+  const g=loot.rps[it.id];
+  if(eff.length>1&&g&&g.st==='done'&&eff.includes(g.win)) eff=[g.win];
+  return{st:eff.length>1?'tie':'win',eff,T,top};
+}
+/* действия */
+function lootAddItem(){if(!isMaster()||!db) return; const key=R(LP+'/items').push().key; focusNext=key; R(LP+'/items/'+key).set({n:''});}
+function lootDelItem(id){
+  if(!isMaster()||!db) return;
+  const u={}; u['items/'+id]=null; u['ref/'+id]=null; u['rps/'+id]=null;
+  PCOLORS.forEach(pc=>{u['bid/'+pc.k+'/'+id]=null;});
+  R(LP).update(u);
+}
+function lootRename(id,v){if(isMaster()&&db) R(LP+'/items/'+id+'/n').set(v.trim());}
+function lootClear(){if(isMaster()&&db){lootEdit=false;R(LP).remove();}}
+function lootGo(){
+  if(!isMaster()||!db) return;
+  if(!loot.items.length){toast('Добавьте хотя бы одну позицию');return;}
+  R(LP+'/open').set(1);
+}
+function lootForce(){if(isMaster()&&db) R(LP+'/rev').set(1);}
+function lootOut(k,on){
+  if(!isMaster()||!db) return;
+  const u={}; u['out/'+k]=on?1:null;
+  if(on){
+    u['rdy/'+k]=null;
+    Object.keys(loot.ref).forEach(id=>{u['ref/'+id+'/'+k]=null;});
+    Object.keys(loot.rps).forEach(id=>{if(loot.rps[id].par.includes(k)) u['rps/'+id]=null;});
+  }
+  R(LP).update(u);
+}
+function lootExtra(k,txt){
+  if(!isMaster()||!db) return;
+  const n=Math.floor(+String(txt).trim()||0);
+  R(LP+'/x/'+k).set(n>0?n:null);
+}
+function lootBid(k,id,txt){
+  if(me.color!==k||!db||loot.rdy[k]||loot.rev) return;
+  const t=String(txt).trim(), cur=loot.bid[k][id]||0, path=LP+'/bid/'+k+'/'+id;
+  if(t===''||+t===0){R(path).set(null);return;}
+  const n=Math.floor(+t);
+  if(!Number.isFinite(n)||n<0){toast('Введите число');renderLoot();return;}
+  if(n<2){toast('Минимум 2 очка на позицию');renderLoot();return;}
+  const left=lootLeft(k)+cur;
+  if(n>left){toast('Не хватает очков: на эту позицию можно не больше '+left);renderLoot();return;}
+  R(path).set(n);
+}
+function lootReady(k,on){
+  if(me.color!==k||!db||loot.rev) return;
+  if(on&&lootLeft(k)<0){toast('Потрачено больше очков, чем есть');return;}
+  R(LP+'/rdy/'+k).set(on?1:null);
+}
+function lootAuto(){
+  if(!db||!me.role||!loot.open||loot.rev) return;
+  const M=lootMembers(); if(M.length&&M.every(k=>loot.rdy[k])) R(LP+'/rev').set(1);
+}
+/* камень-ножницы-бумага */
+function rpsPropose(id){
+  const it=loot.items.find(x=>x.id===id), M=lootMembers(); if(!it||!db) return;
+  const s=itemStatus(it,M), g=loot.rps[id];
+  if(s.st!=='tie'||!s.eff.includes(me.color)||(g&&g.st!=='done')) return;
+  R(LP+'/rps/'+id).set({st:'ask',by:me.color,par:objOf(s.eff),acc:objOf([me.color])});
+}
+function rpsAccept(id){
+  const g=loot.rps[id]; if(!db||!g||g.st!=='ask'||!g.par.includes(me.color)||g.acc.includes(me.color)) return;
+  if(g.acc.length+1<g.par.length){R(LP+'/rps/'+id+'/acc/'+me.color).set(1);return;}
+  R(LP+'/rps/'+id).update({st:'play',rd:1,al:objOf(g.par),bye:g.par.length%2?g.par[Math.floor(Math.random()*g.par.length)]:null,wn:null,ls:null,pk:null,['acc/'+me.color]:1});
+}
+function rpsDecline(id){const g=loot.rps[id]; if(db&&g&&g.st==='ask'&&g.par.includes(me.color)) R(LP+'/rps/'+id).remove();}
+function rpsPick(id,c){
+  const g=loot.rps[id]; if(!db||!g||g.st!=='play'||!g.al.includes(me.color)) return;
+  if(((g.pk['r'+g.rd]||{})[me.color])) return;
+  R(LP+'/rps/'+id+'/pk/r'+g.rd+'/'+me.color).set(c);
+}
+function lootRefuse(id){
+  const it=loot.items.find(x=>x.id===id); if(!it||!db) return;
+  const s=itemStatus(it,lootMembers()), g=loot.rps[id];
+  if(s.st!=='tie'||!s.eff.includes(me.color)||(g&&g.st!=='done')) return;
+  R(LP+'/ref/'+id+'/'+me.color).set(1);
+}
+// каждый раунд обрабатывает один клиент: первый из оставшихся в игре
+function rpsTick(){
+  if(!db||!me.role) return;
+  Object.keys(loot.rps).forEach(id=>{
+    const g=loot.rps[id]; if(g.st!=='play'||g.al[0]!==me.color) return;
+    const pk=g.pk['r'+g.rd]||{}, sig=JSON.stringify([g.st,g.rd,pk,g.wn,g.ls]);
+    if(rpsSig[id]===sig) return; rpsSig[id]=sig;
+    const rest=g.al.filter(k=>k!==g.bye), u={}, wn=Object.assign({},g.wn), ls=Object.assign({},g.ls), lg=R(LP+'/rps/'+id+'/lg');
+    let did=false;
+    for(let i=0;i<rest.length;i+=2){
+      const a=rest[i], b=rest[i+1];
+      if(wn[a]||ls[a]||wn[b]||ls[b]||!pk[a]||!pk[b]) continue;
+      const res=pk[a]===pk[b]?'d':(BEATS[pk[a]]===pk[b]?'a':'b');
+      u['lg/'+lg.push().key]={rd:g.rd,a,pa:pk[a],b,pb:pk[b],r:res}; did=true;
+      if(res==='d'){u['pk/r'+g.rd+'/'+a]=null;u['pk/r'+g.rd+'/'+b]=null;}
+      else{const w=res==='a'?a:b, l=res==='a'?b:a; wn[w]=1;ls[l]=1;u['wn/'+w]=1;u['ls/'+l]=1;}
+    }
+    if(rest.every(k=>wn[k]||ls[k])&&(!g.bye||pk[g.bye])){
+      const nxt=PCOLORS.map(p=>p.k).filter(k=>wn[k]||k===g.bye);
+      Object.keys(u).forEach(x=>{if(/^(wn|ls)\//.test(x)) delete u[x];});
+      if(g.bye) u['lg/'+lg.push().key]={rd:g.rd,a:g.bye,pa:pk[g.bye],bye:1};
+      if(nxt.length<=1){u.st='done';u.win=nxt[0]||'';}
+      else{u.rd=g.rd+1;u.al=objOf(nxt);u.bye=nxt.length%2?nxt[Math.floor(Math.random()*nxt.length)]:null;u.wn=null;u.ls=null;}
+      did=true;
+    }
+    if(did) R(LP+'/rps/'+id).update(u);
+  });
+}
+function copyText(t){
+  const done=()=>toast('Скопировано');
+  const fb=()=>{const ta=document.createElement('textarea');ta.value=t;ta.style.cssText='position:fixed;opacity:0';document.body.appendChild(ta);ta.select();try{document.execCommand('copy');done();}catch(e){toast('Не удалось скопировать');}ta.remove();};
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(done,fb); else fb();
+}
+/* отрисовка */
+const lbtn=(txt,cls,fn)=>{const b=el('button','btn'+(cls?' '+cls:''));b.type='button';b.textContent=txt;b.addEventListener('click',()=>fn(b));return b;};
+function rpsLine(g,e){
+  const nm=k=>nickOf(k);
+  if(isMaster()){
+    if(e.bye) return 'Раунд '+e.rd+': '+nm(e.a)+' ('+RPS_N[e.pa]+') — автопроход';
+    return 'Раунд '+e.rd+': '+nm(e.a)+' ('+RPS_N[e.pa]+') — '+nm(e.b)+' ('+RPS_N[e.pb]+'): '+(e.r==='d'?'ничья':'победил '+nm(e.r==='a'?e.a:e.b));
+  }
+  if(e.a===me.color){
+    if(e.bye) return 'Раунд '+e.rd+': вы бросили '+RPS_N[e.pa]+'. Вы победили!';
+    return 'Раунд '+e.rd+': вы — '+RPS_N[e.pa]+', '+nm(e.b)+' — '+RPS_N[e.pb]+'. '+(e.r==='d'?'Ничья, бросайте снова.':e.r==='a'?'Вы победили!':'Вы проиграли.');
+  }
+  if(e.b===me.color) return 'Раунд '+e.rd+': вы — '+RPS_N[e.pb]+', '+nm(e.a)+' — '+RPS_N[e.pa]+'. '+(e.r==='d'?'Ничья, бросайте снова.':e.r==='b'?'Вы победили!':'Вы проиграли.');
+  return '';
+}
+function tieCard(it,idx,s){
+  const g=loot.rps[it.id], card=el('div','lcard');
+  const h=el('div','lch'); h.textContent='Позиция '+(idx+1)+' «'+(it.n||'без названия')+'»'; card.appendChild(h);
+  const who=s.eff.map(nickOf).join(', ');
+  const mine=s.eff.includes(me.color);
+  if(g&&g.st==='ask'){
+    card.appendChild(elt('p','lp','Предложена игра в камень-ножницы-бумагу. Ставки по '+s.top+' очк.: '+g.par.map(nickOf).join(', ')+'. Согласились: '+g.acc.map(nickOf).join(', ')+'.'));
+    if(g.par.includes(me.color)&&!g.acc.includes(me.color)){
+      const r=el('div','lrow'); r.appendChild(lbtn('Принять','primary',()=>rpsAccept(it.id))); r.appendChild(lbtn('Отказаться от игры','',()=>rpsDecline(it.id))); card.appendChild(r);
+    }else if(mine) card.appendChild(elt('p','lp muted','Ждём остальных.'));
+  }else if(g&&g.st==='play'){
+    card.appendChild(elt('p','lp','Игра идёт: '+g.par.map(nickOf).join(', ')+'. Раунд '+g.rd+'.'));
+    const pk=g.pk['r'+g.rd]||{};
+    if(g.al.includes(me.color)){
+      if(!pk[me.color]){
+        const r=el('div','lrow'); ['r','s','p'].forEach(c=>r.appendChild(lbtn(RPS_I[c]+' '+RPS_N[c],'',()=>rpsPick(it.id,c)))); card.appendChild(r);
+      }else card.appendChild(elt('p','lp muted','Бросок сделан. Ждём остальных.'));
+    }else if(g.par.includes(me.color)) card.appendChild(elt('p','lp muted','Вы выбыли из игры.'));
+    if(isMaster()) card.appendChild(elt('p','lp muted','Бросили в этом раунде: '+(Object.keys(pk).map(nickOf).join(', ')||'никто')));
+  }else{
+    card.appendChild(elt('p','lp','Одинаковые ставки по '+s.top+' очк.: '+who+'.'));
+    if(mine){
+      const r=el('div','lrow'); r.appendChild(lbtn('Сыграть в камень-ножницы-бумагу','primary',()=>rpsPropose(it.id)));
+      r.appendChild(lbtn('Отказаться от предмета','',()=>lootRefuse(it.id))); card.appendChild(r);
+    }
+  }
+  if(g){const lines=g.lg.map(e=>rpsLine(g,e)).filter(Boolean); if(lines.length){const ul=el('ul','lgl'); lines.forEach(t=>ul.appendChild(elt('li','',t))); card.appendChild(ul);}}
+  return card;
+}
+function listBlock(k,M){
+  const box=el('div','lcard llist'), head=el('div','lch');
+  head.appendChild(elt('span','',isMaster()?'Лут: '+nickOf(k):'Ваш лут'));
+  const lines=[]; let pend=false;
+  loot.items.forEach((it,i)=>{const s=itemStatus(it,M); if(s.st==='tie'&&s.eff.includes(k)) pend=true; else if(s.st==='win'&&s.eff[0]===k) lines.push((i+1)+'. '+(it.n||'(без названия)'));});
+  const tools=el('span','ltools');
+  if(!pend||isMaster()) tools.appendChild(lbtn(lootShow[k]?'Скрыть':'Показать','',()=>{lootShow[k]=!lootShow[k];renderLoot();}));
+  if(!pend||isMaster()) tools.appendChild(lbtn('Копировать','',()=>copyText(lines.join('\n'))));
+  head.appendChild(tools); box.appendChild(head);
+  if(pend) box.appendChild(elt('p','lp muted',isMaster()?'Есть нерешённые спорные позиции — список неполный.':'Есть спорные позиции. Список появится, когда они будут решены.'));
+  if((!pend||isMaster())&&lootShow[k]){
+    if(!lines.length) box.appendChild(elt('p','lp muted','Пока ничего не досталось.'));
+    else{const pre=el('pre','lpre'); pre.textContent=lines.join('\n'); box.appendChild(pre);}
+  }
+  return box;
+}
+function renderLoot(){
+  lootPending=false; hideTip();
+  const root=$('#lootBody'); if(!root) return; root.innerHTML='';
+  const master=isMaster(), M=lootMembers(), editing=master&&(lootEdit||!loot.open);
+  if(!loot.open&&!master){root.appendChild(elt('p','hint','Мастер ещё готовит лут. Когда он будет готов, позиции появятся здесь.'));return;}
+  if(!me.role){root.appendChild(elt('p','hint','Войдите, чтобы увидеть лут.'));return;}
+  if(master){
+    const bar=el('div','adminbar');
+    bar.appendChild(elt('span','lbl','Мастер'));
+    if(!loot.open) bar.appendChild(lbtn('Лут готов','primary',lootGo));
+    else{
+      bar.appendChild(lbtn(lootEdit?'Готово':'Редактировать','',()=>{lootEdit=!lootEdit;focusNext=null;renderLoot();}));
+      if(!loot.rev) bar.appendChild(lbtn('Вскрыть сейчас','',b=>arm(b,lootForce)));
+    }
+    bar.appendChild(lbtn('Очистить лут','',b=>arm(b,lootClear)));
+    const st=el('span','pill'); st.textContent=!loot.open?'Лут ещё не открыт игрокам':(loot.rev?'Лут вскрыт':'Готовы '+M.filter(k=>loot.rdy[k]).length+' из '+M.length);
+    bar.appendChild(st); root.appendChild(bar);
+  }
+  const own=(me.role==='player'&&M.includes(me.color))?me.color:null;
+  if(loot.open&&me.role==='player'&&!own) root.appendChild(elt('p','hint','Вы не участвуете в этом луте: заполните персонажа на вкладке «Главная» или попросите мастера вернуть вас.'));
+  const wrap=el('div','mwrap fit lootwrap'), t=el('table','mt lt2'); wrap.appendChild(t);
+  const hr=el('tr'); hr.appendChild(elt('th','','№')); hr.appendChild(elt('th','','Позиция'));
+  if(loot.open) M.forEach(k=>{
+    const th=el('th',k===own?'mine':''); th.appendChild(dotEl(k)); th.appendChild(document.createTextNode(' '+nickOf(k)+' '));
+    const ck=el('span','rdy'+(loot.rdy[k]?' on':'')); ck.textContent=loot.rdy[k]?'✓':'…'; ck.title=loot.rdy[k]?'Готов':'Ещё не готов'; th.appendChild(ck);
+    if(editing){const x=el('button','m-b x'); x.type='button'; x.textContent='×'; x.title='Убрать игрока из лута'; x.addEventListener('click',()=>lootOut(k,true)); th.appendChild(x);}
+    hr.appendChild(th);
+  });
+  if(editing) hr.appendChild(el('th'));
+  const thead=el('thead'); thead.appendChild(hr); t.appendChild(thead);
+  const tb=el('tbody'); t.appendChild(tb);
+  const see=k=>loot.rev||master||k===own;
+  loot.items.forEach((it,i)=>{
+    const tr=el('tr'), s=loot.open?itemStatus(it,M):null;
+    tr.appendChild(elt('td','no',String(i+1)));
+    const nm=el('td','nm');
+    if(editing){const inp=el('input','m-in'); inp.type='text'; inp.value=it.n; inp.placeholder='Название предмета'; inp.dataset.fid=it.id; inp.size=28; inp.addEventListener('change',()=>lootRename(it.id,inp.value)); nm.appendChild(inp);}
+    else nm.textContent=it.n||'—';
+    tr.appendChild(nm);
+    if(loot.open) M.forEach(k=>{
+      const td=el('td','bc'+(k===own?' mine':''));
+      if(!see(k)){td.classList.add('dark');tr.appendChild(td);return;}
+      const v=loot.bid[k][it.id]||0;
+      if(k===own&&!loot.rdy[k]&&!loot.rev){
+        const inp=el('input','m-sq'); inp.type='text'; inp.inputMode='numeric'; inp.value=v||''; inp.size=3; inp.setAttribute('aria-label','Очки на позицию '+(i+1));
+        inp.addEventListener('change',()=>lootBid(k,it.id,inp.value)); td.appendChild(inp);
+      }else td.textContent=v||'';
+      if(loot.rev&&v){
+        if((loot.ref[it.id]||{})[k]) td.classList.add('ref');
+        else if(s.eff.includes(k)) td.classList.add(s.eff.length>1?'tie':'win');
+      }
+      tr.appendChild(td);
+    });
+    if(editing){const td=el('td'); const x=el('button','m-b x'); x.type='button'; x.textContent='×'; x.title='Удалить позицию'; x.addEventListener('click',()=>lootDelItem(it.id)); td.appendChild(x); tr.appendChild(td);}
+    tb.appendChild(tr);
+  });
+  if(loot.open&&M.length){
+    const showX=editing||M.some(k=>loot.x[k]&&see(k));
+    if(showX){
+      const tr=el('tr','sumrow'); tr.appendChild(el('td')); tr.appendChild(elt('td','nm','Дополнительные очки'));
+      M.forEach(k=>{
+        const td=el('td','bc'+(k===own?' mine':'')); if(!see(k)) td.classList.add('dark');
+        else if(editing){const inp=el('input','m-sq'); inp.type='text'; inp.inputMode='numeric'; inp.size=3; inp.value=loot.x[k]||''; inp.addEventListener('change',()=>lootExtra(k,inp.value)); td.appendChild(inp);}
+        else td.textContent=loot.x[k]||'';
+        tr.appendChild(td);
+      });
+      if(editing) tr.appendChild(el('td')); tb.appendChild(tr);
+    }
+    const tr=el('tr','sumrow'); tr.appendChild(el('td')); tr.appendChild(elt('td','nm','Осталось очков'));
+    M.forEach(k=>{
+      const td=el('td','bc'+(k===own?' mine':'')); if(!see(k)){td.classList.add('dark');tr.appendChild(td);return;}
+      const left=lootLeft(k); const b=el('b',left<0?'neg':''); b.textContent=left+' из '+lootBudget(k); td.appendChild(b);
+      if(left>0&&!loot.rev&&(k===own||master)){const w=el('span','warnmark'); w.textContent='!'; w.setAttribute('aria-label','Вы не потратили очки!'); attachTip(w,k===own?'Вы не потратили очки!':nickOf(k)+' не потратил очки!'); td.appendChild(w);}
+      tr.appendChild(td);
+    });
+    if(editing) tr.appendChild(el('td')); tb.appendChild(tr);
+    if(own&&!loot.rev){
+      const r2=el('tr','sumrow'); r2.appendChild(el('td')); r2.appendChild(elt('td','nm',''));
+      M.forEach(k=>{
+        const td=el('td','bc'+(k===own?' mine':'')); if(k===own){const on=!!loot.rdy[k]; td.appendChild(lbtn(on?'Отменить готовность':'Готов',on?'':'primary',()=>lootReady(k,!on)));} else td.classList.add('dark');
+        r2.appendChild(td);
+      });
+      tb.appendChild(r2);
+    }
+  }
+  root.appendChild(wrap);
+  if(editing){
+    const r=el('div','lrow'); r.appendChild(lbtn('+ Позиция','',lootAddItem)); root.appendChild(r);
+    const outs=PCOLORS.filter(pc=>hasData(pc.k)&&loot.out[pc.k]);
+    if(outs.length&&loot.open){const o=el('div','lrow'); o.appendChild(elt('span','muted','Убраны из лута:')); outs.forEach(pc=>{const b=lbtn(nickOf(pc.k)+' — вернуть','',()=>lootOut(pc.k,false)); o.appendChild(b);}); root.appendChild(o);}
+  }
+  if(loot.open&&!loot.rev&&own) root.appendChild(elt('p','hint','Минимум 2 очка на позицию (или ничего). Остальные игроки не видят, сколько и куда вы поставили. Когда все нажмут «Готов», ставки вскроются.'));
+  if(loot.rev){
+    const ties=[]; loot.items.forEach((it,i)=>{const s=itemStatus(it,M); const g=loot.rps[it.id]; if(s.st==='tie'||(g&&g.st!=='done')) ties.push([it,i,s]);});
+    if(ties.length){const sec=el('section','lootsec'); sec.appendChild(elt('h2','','Спорные позиции')); ties.forEach(([it,i,s])=>sec.appendChild(tieCard(it,i,s.st==='tie'?s:Object.assign({},s,{eff:s.eff})))); root.appendChild(sec);}
+    const sec=el('section','lootsec'); if(master) sec.appendChild(elt('h2','','Лут игроков'));
+    if(master) M.forEach(k=>sec.appendChild(listBlock(k,M))); else if(own) sec.appendChild(listBlock(own,M));
+    root.appendChild(sec);
+  }
+  if(focusNext){const n=root.querySelector('[data-fid="'+focusNext+'"]'); focusNext=null; if(n) n.focus();}
+}
+function renderLootSafe(){
+  const a=document.activeElement;
+  const typing=a&&a.closest&&a.closest('#tab-loot')&&(a.tagName==='INPUT'||a.tagName==='SELECT'||a.tagName==='TEXTAREA');
+  if(typing||ptrDown){lootPending=true;return;}
+  renderLoot();
+}
+$('#tab-loot').addEventListener('focusout',()=>setTimeout(()=>{if(lootPending&&tab==='loot') renderLootSafe();},0));
+document.addEventListener('pointerup',()=>setTimeout(()=>{if(lootPending&&tab==='loot') renderLootSafe();},0),true);
+
+/* ---------- вики ---------- */
+// ссылки левого меню: {t:'Название кнопки',u:'https://адрес'}
+const WIKI_LINKS=[
+  {t:'Корневая папка игры',u:'https://drive.google.com/drive/folders/10PiePDB1881-AHWClyHbTSQXv9F9a51a'},
+  {t:'Травмы',u:'https://docs.google.com/document/d/1l4KyVopdcucCTNUmnr8mIlofrqEBbxVwr96YC7L32Rc/edit?tab=t.0#heading=h.tgd1a7gxjltk'},
+  {t:'Боевые правила',u:'https://docs.google.com/document/d/13IL-AgN3BXbVmu9Q2hTuVMk_ZNSY4KP5vp5E6tUqFN8/edit?tab=t.0#heading=h.j82dnqxthi3o'},
+  {t:'Тренировки',u:'https://docs.google.com/document/d/1ua_JCANFS0J3xtfutMCXfqmBt5r7iQEDf5r3dVa6f8U/edit?tab=t.0'},
+  {t:'Арканика и откат',u:'https://docs.google.com/document/d/1MJ0k3IF3H3-9CmK_ddL04GrY4nsgDm6CU7sr1pQKsM8/edit?tab=t.0'}
+];
+function renderWiki(){
+  const nav=$('#wikiNav'); if(!nav) return; nav.innerHTML='';
+  if(!WIKI_LINKS.length){nav.appendChild(elt('p','muted','Ссылки пока не добавлены.'));return;}
+  WIKI_LINKS.forEach(l=>{const a=el('a','btn wl'); a.textContent=l.t; a.href=l.u; a.target='_blank'; a.rel='noopener noreferrer'; nav.appendChild(a);});
+}
+/* ---------- заявки: board/main/req/{id} ---------- */
+const RP='board/main/req', REQ_ST={open:'На рассмотрении',accepted:'Принято',denied:'Отказано',closed:'Закрыта'};
+function parseReq(m){
+  return Object.entries((m&&m.req&&typeof m.req==='object')?m.req:{}).map(([id,r])=>{
+    r=r||{};
+    return{id,k:PCK[r.k]?r.k:'',ch:String(r.ch||'').slice(0,80),t:String(r.t||'').slice(0,160),d:String(r.d||'').slice(0,3000),
+      st:REQ_ST[r.st]?r.st:'open',a:String(r.a||'').slice(0,1500),ts:numOrNull(r.ts)||0};
+  }).filter(r=>r.k).sort(byId);
+}
+let reqs=[], reqPending=false; const reqDraft={ch:'',t:'',d:''}, reqReply={};
+const fmtTs=ts=>ts?new Date(ts).toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+function reqSend(){
+  if(!db||me.role!=='player') return;
+  const t=reqDraft.t.trim(); if(!t){toast('Напишите название заявки');return;}
+  const d=mainData[me.color], names=d.chars.map(c=>charName(d,c.id));
+  const ch=reqDraft.ch&&names.includes(reqDraft.ch)?reqDraft.ch:names[0];
+  R(RP).push().set({k:me.color,ch,t:t.slice(0,160),d:reqDraft.d.trim().slice(0,3000),st:'open',ts:Date.now()});
+  reqDraft.t='';reqDraft.d='';renderReq();
+}
+function reqClose(r){if(db&&r.k===me.color&&r.st==='open') R(RP+'/'+r.id+'/st').set('closed');}
+function reqDel(r){if(db&&r.k===me.color&&r.st!=='open') R(RP+'/'+r.id).remove();}
+function reqSet(r,st){
+  if(!db||!isMaster()) return;
+  const txt=(reqReply[r.id]||'').trim().slice(0,1500);
+  R(RP+'/'+r.id).update({st,a:st==='closed'?null:(txt||null)}); delete reqReply[r.id];
+}
+function reqCloseAll(){
+  if(!db||!isMaster()) return;
+  const u={}; reqs.forEach(r=>{if(r.st==='open') u[r.id+'/st']='closed';});
+  if(Object.keys(u).length) R(RP).update(u);
+}
+function reqCard(r,master){
+  const c=el('div','lcard rq '+r.st), h=el('div','lch');
+  const left=el('span'); if(master){left.appendChild(dotEl(r.k)); left.appendChild(document.createTextNode(' '+nickOf(r.k)+' · '));}
+  left.appendChild(document.createTextNode((r.ch||'Персонаж')+' — '+(r.t||'без названия'))); h.appendChild(left);
+  const bd=el('span','rbadge '+r.st); bd.textContent=REQ_ST[r.st]; h.appendChild(bd); c.appendChild(h);
+  if(r.ts) c.appendChild(elt('p','lp muted',fmtTs(r.ts)));
+  if(r.d) c.appendChild(elt('p','lp rtext',r.d));
+  if(!master&&r.a) c.appendChild(elt('p','lp rtext reply','Ответ мастера: '+r.a));
+  const row=el('div','lrow');
+  if(master){
+    const ta=el('textarea','m-in rta'); ta.rows=2; ta.placeholder='Ответ игроку (необязательно)'; ta.maxLength=1500; ta.value=reqReply[r.id]||'';
+    ta.addEventListener('input',()=>{reqReply[r.id]=ta.value;}); c.appendChild(ta);
+    row.appendChild(lbtn('Принято','primary',()=>reqSet(r,'accepted')));
+    row.appendChild(lbtn('Отказано','',()=>reqSet(r,'denied')));
+    row.appendChild(lbtn('Закрыть','',()=>reqSet(r,'closed')));
+  }else if(r.st==='open') row.appendChild(lbtn('Закрыть заявку','',()=>reqClose(r)));
+  else row.appendChild(lbtn('Удалить','',()=>reqDel(r)));
+  c.appendChild(row); return c;
+}
+function renderReq(){
+  reqPending=false; hideTip();
+  const root=$('#reqBody'); if(!root) return; root.innerHTML='';
+  if(!me.role){root.appendChild(elt('p','hint','Войдите, чтобы работать с заявками.'));return;}
+  if(isMaster()){
+    const open=reqs.filter(r=>r.st==='open');
+    const bar=el('div','adminbar'); bar.appendChild(elt('span','lbl','Мастер'));
+    bar.appendChild(elt('span','pill','Открытых заявок: '+open.length));
+    if(open.length) bar.appendChild(lbtn('Закрыть все заявки','',b=>arm(b,reqCloseAll)));
+    root.appendChild(bar);
+    if(!open.length) root.appendChild(elt('p','hint','Новых заявок нет.'));
+    open.forEach(r=>root.appendChild(reqCard(r,true)));
+    return;
+  }
+  const d=mainData[me.color], names=d.chars.map(c=>charName(d,c.id));
+  const form=el('div','lcard rform'); form.appendChild(elt('div','lch','Новая заявка'));
+  const sel=el('select','m-sel rsel'); names.forEach(n=>{const o=el('option'); o.value=n; o.textContent=n; sel.appendChild(o);});
+  if(names.includes(reqDraft.ch)) sel.value=reqDraft.ch; else reqDraft.ch=names[0];
+  sel.addEventListener('change',()=>{reqDraft.ch=sel.value;});
+  const lab=el('label','rlab'); lab.appendChild(elt('span','muted','От лица персонажа')); lab.appendChild(sel); form.appendChild(lab);
+  const ti=el('input','m-in rti'); ti.type='text'; ti.placeholder='Название'; ti.maxLength=160; ti.value=reqDraft.t; ti.addEventListener('input',()=>{reqDraft.t=ti.value;}); form.appendChild(ti);
+  const ta=el('textarea','m-in rta'); ta.rows=4; ta.placeholder='Описание'; ta.maxLength=3000; ta.value=reqDraft.d; ta.addEventListener('input',()=>{reqDraft.d=ta.value;}); form.appendChild(ta);
+  const row=el('div','lrow'); row.appendChild(lbtn('Отправить','primary',reqSend)); form.appendChild(row);
+  root.appendChild(form);
+  const mine=reqs.filter(r=>r.k===me.color).reverse();
+  root.appendChild(elt('h2','rh','Мои заявки'));
+  if(!mine.length) root.appendChild(elt('p','hint','Заявок пока нет.'));
+  mine.forEach(r=>root.appendChild(reqCard(r,false)));
+}
+function renderReqSafe(){
+  const a=document.activeElement;
+  const typing=a&&a.closest&&a.closest('#tab-req')&&(a.tagName==='INPUT'||a.tagName==='SELECT'||a.tagName==='TEXTAREA');
+  if(typing||ptrDown){reqPending=true;return;}
+  renderReq();
+}
+function reqBadge(){
+  const n=isMaster()?reqs.filter(r=>r.st==='open').length:0, b=document.querySelector('.tab[data-tab="req"]');
+  if(b) b.textContent='Заявки'+(n?' ('+n+')':'');
+}
+$('#tab-req').addEventListener('focusout',()=>setTimeout(()=>{if(reqPending&&tab==='req') renderReqSafe();},0));
+document.addEventListener('pointerup',()=>setTimeout(()=>{if(reqPending&&tab==='req') renderReqSafe();},0),true);
+
+/* ---------- календарь: три недели с понедельника, данные в board/main/cal/{ГГГГ-ММ-ДД} ---------- */
+const CAL_WEEKS=3, MONTHS=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+const MONTHS_G=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const WDAYS=['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const elt=(t,c,x)=>{const n=el(t,c);n.textContent=x;return n;};
+const dkey=d=>d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+function calStart(now){const t=new Date((now||new Date()).getFullYear(),(now||new Date()).getMonth(),(now||new Date()).getDate());t.setDate(t.getDate()-((t.getDay()+6)%7));return t;}
+let calData={};
+function parseCal(m){
+  const out={}; const c=(m&&m.cal&&typeof m.cal==='object')?m.cal:{};
+  Object.keys(c).forEach(d=>{
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(d)) return;
+    const v=c[d]||{}, p={};
+    PCOLORS.forEach(pc=>{if(v.p&&v.p[pc.k]) p[pc.k]=1;});
+    out[d]={p,m:!!v.m,b:!!v.b};
+  });
+  return out;
+}
+function calClick(d){
+  if(!db||!me.role) return;
+  const v=calData[d]||{p:{},m:false,b:false}, base='board/main/cal/'+d;
+  if(isMaster()){
+    // пусто → зелёная полоска → блокировка → пусто
+    if(!v.m&&!v.b) R(base+'/m').set(1);
+    else if(v.m) R(base).update({m:null,b:1});
+    else R(base+'/b').set(null);
+  }else{
+    if(v.b) return;
+    R(base+'/p/'+me.color).set(v.p[me.color]?null:1);
+  }
+}
+function renderCal(){
+  const grid=$('#calGrid'); if(!grid) return;
+  hideTip(); grid.innerHTML='';
+  const st=calStart(), todayK=dkey(new Date());
+  const days=[]; for(let i=0;i<CAL_WEEKS*7;i++){const d=new Date(st);d.setDate(st.getDate()+i);days.push(d);}
+  const a=days[0], b=days[days.length-1];
+  $('#calTitle').textContent=(a.getMonth()===b.getMonth()&&a.getFullYear()===b.getFullYear())?MONTHS[a.getMonth()]+' '+a.getFullYear()
+    :(a.getFullYear()===b.getFullYear()?MONTHS[a.getMonth()]+' — '+MONTHS[b.getMonth()]+' '+a.getFullYear():MONTHS[a.getMonth()]+' '+a.getFullYear()+' — '+MONTHS[b.getMonth()]+' '+b.getFullYear());
+  WDAYS.forEach(w=>grid.appendChild(elt('div','calhd',w)));
+  days.forEach(d=>{
+    const k=dkey(d), v=calData[k]||{p:{},m:false,b:false}, past=k<todayK;
+    const cnt=Object.keys(v.p).length;
+    const btn=el('button','day'); btn.type='button';
+    if(k===todayK) btn.classList.add('today');
+    if(past) btn.classList.add('past');
+    else if(v.b) btn.classList.add('off');
+    else if(cnt>=3&&v.m) btn.classList.add('grn');
+    else if(cnt>=3) btn.classList.add('yel');
+    const dn=elt('span','dn',(d.getDate()===1?d.getDate()+' '+MONTHS_G[d.getMonth()]:String(d.getDate()))); btn.appendChild(dn);
+    const dots=el('span','dots');
+    PCOLORS.forEach(pc=>{if(v.p[pc.k]){const x=dotEl(pc.k); x.title=mainData[pc.k].nick||pc.n; dots.appendChild(x);}});
+    btn.appendChild(dots);
+    if(v.m&&!v.b) btn.appendChild(el('span','stripe'));
+    const can=!past&&!!db&&!!me.role&&(isMaster()||!v.b);
+    if(can){btn.classList.add('can');btn.addEventListener('click',()=>calClick(k));}
+    else btn.disabled=true;
+    btn.setAttribute('aria-label',d.getDate()+' '+MONTHS_G[d.getMonth()]+(v.b?', заблокирован':'')+(cnt?', отметок: '+cnt:''));
+    grid.appendChild(btn);
+  });
+  $('#calLegend').textContent=isMaster()
+    ?'Клик по дню: зелёная полоска → блокировка → пусто. Жёлтый день: 3 и больше игроков. Зелёный: 3 игрока и полоска мастера.'
+    :'Нажмите на день, чтобы поставить или снять свой кружок. Жёлтый день: 3 и больше игроков. Серый: прошёл или заблокирован мастером.';
+}
+// старые дни (до понедельника текущей недели) стираются из базы
+function calCleanup(){
+  if(!db) return;
+  const lim=dkey(calStart());
+  Object.keys(calData).forEach(d=>{if(d<lim) R('board/main/cal/'+d).remove();});
+}
+
+/* ---------- вкладки ---------- */
+function setTab(t,fromHash){
+  tab=TABS.includes(t)?t:'main';
+  $('#tab-main').hidden=(tab!=='main');
+  $('#tab-calendar').hidden=(tab!=='calendar');
+  $('#tab-loot').hidden=(tab!=='loot');
+  $('#tab-wiki').hidden=(tab!=='wiki');
+  $('#tab-req').hidden=(tab!=='req');
+  $('#tab-tetris').hidden=(tab!=='tetris');
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.tab===tab)));
+  me.vis=(tab==='tetris');
+  closePop(); selected=null;
+  if(!fromHash){try{history.replaceState(null,'','#'+tab);}catch(e){}}
+  if(tab==='main') mainPending=false;
+  render();
+  schedulePresence(true);
+}
+$('#resetColors').addEventListener('click',e=>tryReset(e.currentTarget));
+$('#cStart').addEventListener('click',startCycle);
+$('#cEnd').addEventListener('click',e=>arm(e.currentTarget,endCycle));
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
+  if(busy()) return;
+  setTab(b.dataset.tab);
+}));
+window.addEventListener('hashchange',()=>{
+  const h=(location.hash||'').slice(1);
+  if(TABS.includes(h)&&h!==tab) setTab(h,true);
+});
+
+/* ---------- кнопки с подтверждением ---------- */
+function arm(btn,fn){
+  if(btn._t){clearTimeout(btn._t);btn._t=null;btn.classList.remove('armed');btn.innerHTML=btn._orig;fn();return;}
+  btn._orig=btn.innerHTML; btn.classList.add('armed'); btn.textContent='Нажмите ещё раз';
+  btn._t=setTimeout(()=>{btn._t=null;btn.classList.remove('armed');btn.innerHTML=btn._orig;},3000);
+}
+
+/* ---------- события ---------- */
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-act]'); if(!b) return;
+  const act=b.dataset.act, pid=b.dataset.pid;
+  if(act==='mode'){
+    if(isMaster()) leaveMaster(); else passwordModal();
+  }else if(act==='seed'){ if(isMaster()) seedExample(); }
+  else if(act==='add-char') charModal();
+  else if(act==='add-proj') projectModal();
+  else if(act==='reset-proj') arm(b,()=>{selected=null;resetProjects();toast('Все проекты вернулись в список');});
+  else if(act==='reset-blocks') arm(b,()=>{resetBlocks();toast('Все заглушки удалены');});
+  else if(act==='edit-char') charModal(b.dataset.id);
+  else if(act==='add-mine') mineModal();
+  else if(act==='edit-proj') projectModal(pid);
+  else if(act==='info') togglePop(b,pid);
+  else if(act==='rot') rotateProject(pid);
+  else if(act==='back') unplace(pid);
+});
+
+boardEl.addEventListener('click',e=>{
+  if(!db) return;
+  const cell=e.target.closest('.cell');
+  if(!cell||cell.dataset.pid) return;
+  const ch=state.chars[+cell.dataset.r]; if(!canTE(ch)) return;
+  toggleBlock(ch.id,+cell.dataset.c);
+});
+
+document.addEventListener('pointerdown',e=>{
+  if(modalEl||drag||rdrag) return;
+  if(e.pointerType==='mouse'&&e.button!==0) return;
+  const t=e.target;
+  if(popEl&&!t.closest('.pop')&&!t.closest('[data-act="info"]')) closePop();
+  if(selected&&!t.closest('.ptool')&&!t.closest('.cell[data-pid]')){selected=null;positionTool();}
+  const sb=t.closest('.shapebox');
+  if(sb){prepDrag(e,sb.closest('.proj').dataset.pid,'card',sb);return;}
+  const cell=t.closest('.cell[data-pid]');
+  if(cell){prepDrag(e,cell.dataset.pid,'board',cell);return;}
+  const who=t.closest('.who');
+  if(who&&isMaster()&&!t.closest('button')&&state.chars.length>1){startRowDrag(e,+who.dataset.i);}
+});
+
+document.addEventListener('pointermove',e=>{
+  if(tab!=='tetris') return;
+  const br=boardEl.getBoundingClientRect();
+  me.x=e.clientX-br.left; me.y=e.clientY-br.top;
+  if(!me.vis){me.vis=true;schedulePresence(true);return;}
+  schedulePresence(false);
+});
+document.documentElement.addEventListener('mouseleave',()=>{me.vis=false;schedulePresence(true);});
+window.addEventListener('scroll',renderCursors,true);
+window.addEventListener('resize',renderCursors);
+
+document.addEventListener('keydown',e=>{
+  if(drag&&drag.active){
+    if(e.code==='KeyR'){e.preventDefault();rotateDrag();}
+    else if(e.key==='Escape'){endDrag();}
+    return;
+  }
+  if(rdrag&&rdrag.active&&e.key==='Escape'){rCancel();return;}
+  if(e.key==='Escape'){closePop();if(!modalLocked) closeModal();}
+});
+
+/* ---------- пульс, выход со страницы, название проекта ---------- */
+setInterval(()=>{if(db&&me.role&&online) flushPresence();},HB_MS);
+setInterval(()=>{if(entryRefresh) entryRefresh();},5000);
+// при закрытии страницы освобождаем цвет сразу, не дожидаясь, пока сервер заметит обрыв
+let leaving=false;
+window.addEventListener('pagehide',()=>{
+  if(!db||!me.role) return;
+  leaving=true;
+  try{ if(me.role==='player') R('colors/'+me.color).remove(); R('presence/'+me.id).remove(); }catch(e){}
+});
+window.addEventListener('pageshow',()=>{if(leaving){leaving=false;if(me.role&&db) onConnected();}});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&leaving){leaving=false;if(me.role&&db) onConnected();}});
+const TITLE_DEF='Доска Аватюристов'; let boardTitle=''; const ttlEl=$('#ttl');
+function applyTitle(){
+  if(ttlEl.querySelector('input')) return;
+  const t=boardTitle||TITLE_DEF;
+  ttlEl.textContent=t; document.title=t;
+  ttlEl.classList.toggle('editable',isMaster());
+  ttlEl.title=isMaster()?'Нажмите, чтобы изменить название':'';
+}
+ttlEl.addEventListener('click',()=>{
+  if(!isMaster()||!db||ttlEl.querySelector('input')) return;
+  const inp=el('input'); inp.type='text'; inp.maxLength=60; inp.value=boardTitle||TITLE_DEF; inp.setAttribute('aria-label','Название проекта');
+  ttlEl.textContent=''; ttlEl.appendChild(inp); inp.focus(); inp.select();
+  let done=false;
+  const finish=save=>{
+    if(done) return; done=true;
+    if(save){const v=inp.value.trim().slice(0,60); R('board/main/title').set(v&&v!==TITLE_DEF?v:null); boardTitle=(v&&v!==TITLE_DEF)?v:'';}
+    inp.remove(); applyTitle();
+  };
+  inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();finish(true);}else if(e.key==='Escape'){e.stopPropagation();finish(false);}});
+  inp.addEventListener('blur',()=>finish(false));
+});
+
+/* ---------- запуск ---------- */
+function showBanner(t){bannerEl.textContent=t;bannerEl.hidden=false;}
+function start(){
+  initDb();
+  {const h0=(location.hash||'').slice(1); setTab(TABS.includes(h0)?h0:'main',true);renderWiki();}
+  if(!db){
+    showBanner('Не удалось подключиться к Firebase. Проверьте интернет и настройки в начале файла.');
+    return;
+  }
+  R('.info/connected').on('value',s=>{
+    online=!!s.val(); renderTop();
+    if(online){bannerEl.hidden=true;onConnected();}
+  });
+  let sigT=null, sigM=null;
+  R('board').on('value',s=>{
+    const raw=s.val()||{};
+    loaded=true;
+    const rest=Object.assign({},raw); delete rest.main;
+    const st=JSON.stringify(rest), sm=JSON.stringify(raw.main||null);
+    if(st!==sigT){
+      sigT=st; state=parseBoard(rest);
+      if(tab==='tetris') requestRender(); else renderTop();
+    }
+    if(sm!==sigM){
+      sigM=sm; boardTitle=String((raw.main&&raw.main.title)||'').slice(0,60); applyTitle(); mainData=parseMain(raw.main); cyc=parseCycle(raw.main); calData=parseCal(raw.main); loot=parseLoot(raw.main); reqs=parseReq(raw.main); reqBadge(); calCleanup(); lootAuto(); rpsTick();
+      renderCursors();
+      if(tab==='main') renderMainSafe(); else if(tab==='calendar') renderCal(); else if(tab==='loot') renderLootSafe(); else if(tab==='req') renderReqSafe();
+      renderTop();
+    }
+  },()=>showBanner('Нет доступа к базе. Проверьте правила в Realtime Database.'));
+  R('presence').on('value',s=>{presence=s.val()||{};trackOwners();onPresence();if(entryRefresh) entryRefresh();});
+  R('colors').on('value',s=>{
+    colorsTaken=s.val()||{}; trackOwners();
+    if(entryRefresh) entryRefresh();
+    if(tab==='main') renderMainSafe(); else if(tab==='loot') renderLootSafe();
+    if(me.role==='player'&&online&&!leaving&&colorsTaken[me.color]!==me.id) reclaimColor();
+  });
+  entryModal();
+}
+
+window.__pb={
+  get state(){return state;}, get me(){return me;}, get presence(){return presence;}, get main(){return mainData;}, get cyc(){return cyc;}, get cal(){return calData;}, get loot(){return loot;}, get reqs(){return reqs;}, setTab, addMyChar,
+  placeProject,saveChar,saveProject,reorderChars,seedExample,pickColor,becomeMaster,toggleBlock,rotateProject,unplace
+};
+start();
+})();
+</script>
+</body>
+</html>
