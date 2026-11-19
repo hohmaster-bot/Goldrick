@@ -2370,7 +2370,13 @@ document.addEventListener('pointerup',()=>setTimeout(()=>{if(lootPending&&tab===
 
 /* ---------- вики ---------- */
 // ссылки левого меню: {t:'Название кнопки',u:'https://адрес'}
-const WIKI_LINKS=[];
+const WIKI_LINKS=[
+  {t:'Корневая папка игры',u:'https://drive.google.com/drive/folders/10PiePDB1881-AHWClyHbTSQXv9F9a51a'},
+  {t:'Травмы',u:'https://docs.google.com/document/d/1l4KyVopdcucCTNUmnr8mIlofrqEBbxVwr96YC7L32Rc/edit?tab=t.0#heading=h.tgd1a7gxjltk'},
+  {t:'Боевые правила',u:'https://docs.google.com/document/d/13IL-AgN3BXbVmu9Q2hTuVMk_ZNSY4KP5vp5E6tUqFN8/edit?tab=t.0#heading=h.j82dnqxthi3o'},
+  {t:'Тренировки',u:'https://docs.google.com/document/d/1ua_JCANFS0J3xtfutMCXfqmBt5r7iQEDf5r3dVa6f8U/edit?tab=t.0'},
+  {t:'Арканика и откат',u:'https://docs.google.com/document/d/1MJ0k3IF3H3-9CmK_ddL04GrY4nsgDm6CU7sr1pQKsM8/edit?tab=t.0'}
+];
 function renderWiki(){
   const nav=$('#wikiNav'); if(!nav) return; nav.innerHTML='';
   if(!WIKI_LINKS.length){nav.appendChild(elt('p','muted','Ссылки пока не добавлены.'));return;}
