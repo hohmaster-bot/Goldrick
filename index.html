@@ -291,6 +291,8 @@ button.ck-b:hover{background:var(--surface-2)}
   <span class="pill" id="me" hidden></span>
   <span class="counter" id="counter"></span>
   <span class="spacer"></span>
+  <button class="btn" type="button" id="changeColor" hidden>Сменить цвет</button>
+  <button class="btn" type="button" id="resetColors" title="Освободить все занятые цвета. Данные игры не затрагиваются.">Сбросить цвета</button>
   <button class="btn" type="button" id="modeBtn" data-act="mode"></button>
 </div>
 
@@ -376,11 +378,11 @@ const MASTER_PASSWORD='qweqwe';
 const CELL=44, LABEL=184, CARD=26, GRID=8;
 const COLORS=['#D9534F','#E08A1E','#3E9B4F','#1F8FA6','#3F6FD1','#8A5CD0','#C44E94','#6B7A8F'];
 const PCOLORS=[
-  {k:'blue',n:'Синий',v:'#2F6FED'},
-  {k:'red',n:'Красный',v:'#E5484D'},
-  {k:'yellow',n:'Жёлтый',v:'#F2B705'},
-  {k:'green',n:'Зелёный',v:'#22A559'},
-  {k:'orange',n:'Оранжевый',v:'#F08A24'}
+  {k:'blue',n:'Player 1',v:'#2F6FED'},
+  {k:'red',n:'Player 2',v:'#E5484D'},
+  {k:'yellow',n:'Player 3',v:'#F2B705'},
+  {k:'green',n:'Player 4',v:'#22A559'},
+  {k:'orange',n:'Player 5',v:'#F08A24'}
 ];
 const PCK={}; PCOLORS.forEach(c=>{PCK[c.k]=c;});
 const AV=['#3F6FD1','#C44E94','#1F8FA6','#8A5CD0','#E08A1E','#3E9B4F','#D9534F'];
@@ -515,7 +517,7 @@ function heldBy(pid){
   }
   return null;
 }
-const holderName=c=>c==='m'?'мастер':(PCK[c]?PCK[c].n.toLowerCase():'игрок');
+const holderName=c=>c==='m'?'мастер':(PCK[c]?PCK[c].n:'игрок');
 const holderColor=c=>c==='m'?'var(--fg)':(PCK[c]?PCK[c].v:'#888');
 
 /* ---------- отрисовка фигур ---------- */
@@ -670,6 +672,7 @@ function renderTop(){
   adminBar.querySelector('[data-act="add-proj"]').innerHTML=ICON.plus+'Проект';
   $('#madmin').hidden=!master;
   $('#mbar').hidden=!me.role;
+  $('#changeColor').hidden=(me.role!=='player');
   $('#editBtn').innerHTML=editMode?ICON.check+'Готово':ICON.edit+'Редактировать';
   $('#editBtn').classList.toggle('primary',editMode);
   $('#cStart').disabled=cyc.open;
@@ -685,7 +688,7 @@ function renderTop(){
   else{
     meEl.hidden=false;
     meEl.innerHTML='<span class="dot" style="background:'+(master?'var(--fg)':PCK[me.color].v)+'"></span>'
-      +(master?'Вы: мастер':'Вы: '+esc(PCK[me.color].n.toLowerCase()));
+      +(master?'Вы: мастер':'Вы: '+esc(PCK[me.color].n));
   }
   hintEl.textContent=master
     ? 'Мастер: клик по пустой клетке ставит или убирает заглушку. Тяните персонажа за имя, чтобы переставить его выше или ниже. Остальное доступно как игроку.'
@@ -771,6 +774,99 @@ function assertPresence(){
 function enterRole(role,color){
   me.role=role; me.color=color||null; me.vis=true; editMode=false;
   closeModal(); assertPresence(); render();
+}
+// освобождает все цвета и курсоры; данные игры не трогает. Тех, кто сейчас в игре, программа сразу возвращает на их цвета
+function resetColors(){
+  if(!db){toast('Нет связи с базой');return;}
+  R('colors').remove().then(()=>{
+    toast('Цвета освобождены. Данные игры не затронуты.');
+  },e=>toast('Не удалось сбросить цвета'+(e&&e.code?' ('+e.code+')':'')));
+  R('presence').remove();
+}
+// игрок может сбрасывать цвета раз в 5 минут, мастер без ограничений
+const RESET_CD=5*60*1000;
+function resetWait(){
+  if(isMaster()) return 0;
+  let last=0;
+  try{last=+localStorage.getItem('pb-reset-at')||0;}catch(e){last=resetLast;}
+  return Math.max(0,last+RESET_CD-Date.now());
+}
+let resetLast=0;
+function tryReset(btn){
+  const w=resetWait();
+  if(w>0){
+    const tot=Math.ceil(w/1000), m=Math.floor(tot/60), sec=tot%60;
+    toast('Сбросить цвета можно раз в 5 минут. Подождите ещё '+[m?m+' мин':'',(sec||!m)?sec+' с':''].filter(Boolean).join(' ')+'.');
+    return;
+  }
+  arm(btn,()=>{
+    if(resetWait()>0) return;
+    resetLast=Date.now();
+    try{localStorage.setItem('pb-reset-at',String(resetLast));}catch(e){}
+    resetColors();
+  });
+}
+// смена цвета: записи игрока переезжают на новый цвет, если там пусто
+function switchColor(k){
+  if(me.role!=='player'||k===me.color||!db) return;
+  const old=me.color;
+  if(hasData(old)&&hasData(k)){toast('В «'+PCK[k].n+'» уже есть записи. Выберите другой.');return;}
+  R('colors/'+k).transaction(cur=>(cur===null||cur===me.id)?me.id:undefined,(err,ok)=>{
+    if(err){toast('Не удалось связаться с базой'+(err.code?' ('+err.code+')':''));return;}
+    if(!ok){toast('Этот цвет уже занят, выберите другой');return;}
+    const moveData=hasData(old)&&!hasData(k);
+    const finish=()=>{
+      me.color=k;
+      R('colors/'+old).onDisconnect().cancel(); R('colors/'+old).remove();
+      closeModal(); assertPresence(); render();
+      toast('Теперь вы '+PCK[k].n);
+    };
+    if(!moveData){finish();return;}
+    R(MP(old)).once('value').then(snap=>{
+      const u={}; u[old]=null; u[k]=snap.val();
+      const ck=cyc.checks[old]; if(ck){u['checks/'+old]=null;u['checks/'+k]=ck;}
+      return R('board/main').update(u);
+    }).then(finish,e=>{
+      R('colors/'+k).remove();
+      toast('Не удалось перенести записи'+(e&&e.code?' ('+e.code+')':''));
+    });
+  });
+}
+function colorModal(){
+  openModal((m,close)=>{
+    m.innerHTML='<h3>Сменить цвет</h3>'
+      +'<p class="note">Ваши записи (персонажи, истории, дворы, линзы) переедут на новый цвет, если он ещё пустой.</p>'
+      +'<div class="cpick" id="cp"></div><div class="mactions"><button class="btn" type="button" id="cc-x">Закрыть</button></div>';
+    m.querySelector('#cc-x').onclick=close;
+    const cp=m.querySelector('#cp');
+    entryRefresh=()=>{
+      cp.innerHTML='';
+      PCOLORS.forEach(c=>{
+        const mine=c.k===me.color, taken=colorsTaken[c.k]&&colorsTaken[c.k]!==me.id;
+        const full=hasData(c.k)&&hasData(me.color)&&!mine;
+        const b=el('button','cbtn'); b.type='button'; b.disabled=!!(mine||taken||full);
+        b.innerHTML='<span class="swc" style="background:'+c.v+'"></span><span>'+c.n+'</span>'
+          +(mine?'<small class="muted">ваш</small>':(taken?'<small class="muted">занят</small>':(full?'<small class="muted">есть записи</small>':(hasData(c.k)?'<small class="muted">с записями</small>':''))));
+        b.onclick=()=>switchColor(c.k);
+        cp.appendChild(b);
+      });
+    };
+    entryRefresh();
+  },{noFocus:true});
+}
+function reclaimColor(){
+  R('colors/'+me.color).transaction(cur=>{
+    if(cur===null||cur===me.id) return me.id;
+    return undefined;
+  },(err,ok)=>{
+    if(err||!ok){
+      if(me.role==='player'){
+        me.role=null; me.color=null; render();
+        toast('Ваш цвет занял другой игрок. Выберите другой.');
+        entryModal();
+      }
+    }else assertPresence();
+  });
 }
 function pickColor(k){
   if(!db){toast('Нет связи с базой');return;}
@@ -1200,9 +1296,12 @@ function entryModal(){
     m.innerHTML='<h3>Вход на доску</h3>'
       +'<p class="note">Выберите свой цвет. Так остальные увидят ваш курсор и то, что вы двигаете.</p>'
       +'<div class="cpick" id="cp"></div>'
-      +'<hr class="hr"><button class="btn" type="button" id="em">Я мастер</button><div id="mf" hidden></div>';
+      +'<hr class="hr"><button class="btn" type="button" id="em">Я мастер</button><div id="mf" hidden></div>'
+      +'<hr class="hr"><button class="btn" type="button" id="rc">Сбросить занятые цвета</button>'
+      +'<p class="note">Если ваш цвет завис как «занят», нажмите дважды. Цвета освободятся, данные игры не изменятся. Доступно раз в 5 минут.</p>';
     const cp=m.querySelector('#cp'), mf=m.querySelector('#mf');
     mf.appendChild(passwordForm(becomeMaster));
+    m.querySelector('#rc').onclick=e=>tryReset(e.currentTarget);
     m.querySelector('#em').onclick=()=>{
       mf.hidden=!mf.hidden;
       if(!mf.hidden) mf.querySelector('input').focus();
@@ -1781,6 +1880,8 @@ function setTab(t,fromHash){
   render();
   schedulePresence(true);
 }
+$('#resetColors').addEventListener('click',e=>tryReset(e.currentTarget));
+$('#changeColor').addEventListener('click',colorModal);
 $('#cStart').addEventListener('click',startCycle);
 $('#cEnd').addEventListener('click',e=>arm(e.currentTarget,endCycle));
 document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>{
@@ -1890,7 +1991,12 @@ function start(){
     }
   },()=>showBanner('Нет доступа к базе. Проверьте правила в Realtime Database.'));
   R('presence').on('value',s=>{presence=s.val()||{};onPresence();});
-  R('colors').on('value',s=>{colorsTaken=s.val()||{};if(entryRefresh) entryRefresh();if(tab==='main') renderMainSafe();});
+  R('colors').on('value',s=>{
+    colorsTaken=s.val()||{};
+    if(entryRefresh) entryRefresh();
+    if(tab==='main') renderMainSafe();
+    if(me.role==='player'&&online&&colorsTaken[me.color]!==me.id) reclaimColor();
+  });
   entryModal();
 }
 
