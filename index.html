@@ -394,6 +394,7 @@ button.ck-b:hover{background:var(--surface-2)}
 <nav class="tabs" role="tablist" aria-label="Разделы">
   <button class="tab" type="button" role="tab" data-tab="main">Главная</button>
   <button class="tab" type="button" role="tab" data-tab="calendar">Календарь</button>
+  <button class="tab" type="button" role="tab" data-tab="tetris">Тетрис</button>
   <button class="tab" type="button" role="tab" data-tab="loot">Лут</button>
   <button class="tab" type="button" role="tab" data-tab="wiki">Вики</button>
   <button class="tab" type="button" role="tab" data-tab="req">Заявки</button>
@@ -484,7 +485,7 @@ button.ck-b:hover{background:var(--surface-2)}
   <div id="reqBody"></div>
 </section>
 
-<section id="tab-tetris" hidden style="display:none!important">
+<section id="tab-tetris" hidden>
 <div class="adminbar" id="adminbar" hidden>
   <span class="lbl">Мастер</span>
   <button class="btn primary" type="button" data-act="add-char"></button>
@@ -523,15 +524,15 @@ button.ck-b:hover{background:var(--surface-2)}
 
 /* ---------- настройки ---------- */
 const FIREBASE_CONFIG={
-  apiKey:"AIzaSyBbDr904Mk3-i8X8DAEeMnim8c45d5l3T8",
-  authDomain:"skrejet-9690c.firebaseapp.com",
-  databaseURL:"https://skrejet-9690c-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId:"skrejet-9690c",
-  storageBucket:"skrejet-9690c.firebasestorage.app",
-  messagingSenderId:"1065611303383",
-  appId:"1:1065611303383:web:c77d390f01f0bd0b1b5392"
+  apiKey:"AIzaSyAfFJvHP8CbdRPQSTSGKfRjMGjerHMM8sY",
+  authDomain:"tetris-goldrik.firebaseapp.com",
+  databaseURL:"https://tetris-goldrik-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"tetris-goldrik",
+  storageBucket:"tetris-goldrik.firebasestorage.app",
+  messagingSenderId:"1006736198140",
+  appId:"1:1006736198140:web:70dc0ef3f88d2b519b8a79"
 };
-const MASTER_PASSWORD='123123';
+const MASTER_PASSWORD='qweqwe';
 
 const CELL=44, LABEL=184, CARD=26, GRID=8;
 const COLORS=['#D9534F','#E08A1E','#3E9B4F','#1F8FA6','#3F6FD1','#8A5CD0','#C44E94','#6B7A8F'];
@@ -571,10 +572,9 @@ let state={chars:[],blocks:{},projects:[]};   // доска (общая для �
 let presence={};                              // курсоры
 let colorsTaken={};                           // занятые цвета
 let loaded=false, online=false, pending=false, selected=null;
-const TABS=['main','calendar','loot','wiki','req'];
+const TABS=['main','calendar','tetris','loot','wiki','req'];
 let tab='main';                               // вкладка: 'main', 'calendar' или 'tetris'
 const TIERS=5;
-let curCols=[0]; // какие столбцы дворов показываем (пустые скрываются, кроме режима редактирования)
 const cellMap=new Map();
 
 const me={id:null,role:null,color:null,x:0,y:0,vis:true};
@@ -1886,7 +1886,7 @@ function charRow(pc,d,ch,idx,n){
       if(risk) row.appendChild(mkRisk());
       const sel=el('select','m-sel'); sel.setAttribute('aria-label','Связанный двор');
       sel.appendChild(new Option('— двор —',''));
-      courtsAll.forEach(x=>sel.appendChild(new Option(x.c.n||'без названия',x.c.id)));
+      courtsAll.forEach(x=>sel.appendChild(new Option('T'+x.t+' '+(x.c.n||'без названия'),x.c.id)));
       sel.value=cur?cur.c.id:'';
       sel.addEventListener('change',()=>{mset(k,ch.base+'stories/'+s.id+'/c',sel.value||null);sel.blur();});
       row.appendChild(sel);
@@ -1904,9 +1904,8 @@ function charRow(pc,d,ch,idx,n){
   if(ed) td.appendChild(addBtn('Добавить историю',()=>addItem(k,ch.base+'stories')));
   tr.appendChild(td);
 
-  // дворы: столбцы без номеров, пустые скрыты
+  // дворы T1..T5
   ch.courts.forEach((arr,i)=>{
-    if(!curCols.includes(i)) return;
     const t=i+1, cell=el('td','ct');
     arr.forEach(c=>{
       let cls='ent court';
@@ -1926,7 +1925,7 @@ function charRow(pc,d,ch,idx,n){
       }
       cell.appendChild(row);
     });
-    if(ed) cell.appendChild(addBtn('Добавить двор',()=>addItem(k,ch.base+'courts/t'+t)));
+    if(ed) cell.appendChild(addBtn('Добавить двор в T'+t,()=>addItem(k,ch.base+'courts/t'+t)));
     tr.appendChild(cell);
   });
 
@@ -2108,17 +2107,13 @@ $('#editBtn').addEventListener('click',()=>{
 function renderMain(){
   mainPending=false; hideTip();
   const tbl=$('#mt');
-  const vis=visibleColors();
-  curCols=[];
-  for(let i=0;i<TIERS;i++){
-    if(editMode||vis.some(pc=>mainData[pc.k].chars.some(c=>c.courts[i]&&c.courts[i].length))) curCols.push(i);
-  }
-  if(!curCols.length) curCols=[0];
-  tbl.innerHTML='<thead><tr><th>Игрок</th><th>Персонаж</th><th>Ур.</th><th>Репутация</th><th colspan="'+curCols.length+'">Дворы</th></tr></thead>';
+  tbl.innerHTML='<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th></tr><tr>'
+    +Array.from({length:TIERS},(_,i)=>'<th>T'+(i+1)+'</th>').join('')+'</tr></thead>';
   const tb=el('tbody');
+  const vis=visibleColors();
   vis.forEach(pc=>mainRows(pc).forEach(tr=>tb.appendChild(tr)));
   if(!vis.length){
-    const tr=el('tr'), td=el('td'); td.colSpan=4+curCols.length; td.textContent='Пока никто не вошёл.'; tr.appendChild(td); tb.appendChild(tr);
+    const tr=el('tr'), td=el('td'); td.colSpan=4+TIERS; td.textContent='Пока никто не вошёл.'; tr.appendChild(td); tb.appendChild(tr);
   }
   tbl.appendChild(tb);
   renderChecks();
@@ -2461,7 +2456,7 @@ document.addEventListener('pointerup',()=>setTimeout(()=>{if(lootPending&&tab===
 /* ---------- вики ---------- */
 // ссылки левого меню: {t:'Название кнопки',u:'https://адрес'}
 const WIKI_LINKS=[
-  {t:'Корневая папка игры',u:'https://drive.google.com/drive/folders/12DOX2A7N5YCd9aBDQ1GnJmIGCWJ8UPXq?hl=ru'},
+  {t:'Корневая папка игры',u:'https://drive.google.com/drive/folders/10PiePDB1881-AHWClyHbTSQXv9F9a51a'},
   {t:'Травмы',u:'https://docs.google.com/document/d/1l4KyVopdcucCTNUmnr8mIlofrqEBbxVwr96YC7L32Rc/edit?tab=t.0#heading=h.tgd1a7gxjltk'},
   {t:'Боевые правила',u:'https://docs.google.com/document/d/13IL-AgN3BXbVmu9Q2hTuVMk_ZNSY4KP5vp5E6tUqFN8/edit?tab=t.0#heading=h.j82dnqxthi3o'},
   {t:'Тренировки',u:'https://docs.google.com/document/d/1ua_JCANFS0J3xtfutMCXfqmBt5r7iQEDf5r3dVa6f8U/edit?tab=t.0'},
