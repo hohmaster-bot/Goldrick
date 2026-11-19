@@ -574,6 +574,7 @@ let loaded=false, online=false, pending=false, selected=null;
 const TABS=['main','calendar','loot','wiki','req'];
 let tab='main';                               // вкладка: 'main', 'calendar' или 'tetris'
 const TIERS=5;
+let curCols=[0]; // какие столбцы дворов показываем (пустые скрываются, кроме режима редактирования)
 const cellMap=new Map();
 
 const me={id:null,role:null,color:null,x:0,y:0,vis:true};
@@ -1885,7 +1886,7 @@ function charRow(pc,d,ch,idx,n){
       if(risk) row.appendChild(mkRisk());
       const sel=el('select','m-sel'); sel.setAttribute('aria-label','Связанный двор');
       sel.appendChild(new Option('— двор —',''));
-      courtsAll.forEach(x=>sel.appendChild(new Option('T'+x.t+' '+(x.c.n||'без названия'),x.c.id)));
+      courtsAll.forEach(x=>sel.appendChild(new Option(x.c.n||'без названия',x.c.id)));
       sel.value=cur?cur.c.id:'';
       sel.addEventListener('change',()=>{mset(k,ch.base+'stories/'+s.id+'/c',sel.value||null);sel.blur();});
       row.appendChild(sel);
@@ -1903,8 +1904,9 @@ function charRow(pc,d,ch,idx,n){
   if(ed) td.appendChild(addBtn('Добавить историю',()=>addItem(k,ch.base+'stories')));
   tr.appendChild(td);
 
-  // дворы T1..T5
+  // дворы: столбцы без номеров, пустые скрыты
   ch.courts.forEach((arr,i)=>{
+    if(!curCols.includes(i)) return;
     const t=i+1, cell=el('td','ct');
     arr.forEach(c=>{
       let cls='ent court';
@@ -1924,7 +1926,7 @@ function charRow(pc,d,ch,idx,n){
       }
       cell.appendChild(row);
     });
-    if(ed) cell.appendChild(addBtn('Добавить двор в T'+t,()=>addItem(k,ch.base+'courts/t'+t)));
+    if(ed) cell.appendChild(addBtn('Добавить двор',()=>addItem(k,ch.base+'courts/t'+t)));
     tr.appendChild(cell);
   });
 
@@ -2106,13 +2108,17 @@ $('#editBtn').addEventListener('click',()=>{
 function renderMain(){
   mainPending=false; hideTip();
   const tbl=$('#mt');
-  tbl.innerHTML='<thead><tr><th rowspan="2">Игрок</th><th rowspan="2">Персонаж</th><th rowspan="2">Ур.</th><th rowspan="2">Репутация</th><th colspan="'+TIERS+'">Дворы</th></tr><tr>'
-    +Array.from({length:TIERS},(_,i)=>'<th>T'+(i+1)+'</th>').join('')+'</tr></thead>';
-  const tb=el('tbody');
   const vis=visibleColors();
+  curCols=[];
+  for(let i=0;i<TIERS;i++){
+    if(editMode||vis.some(pc=>mainData[pc.k].chars.some(c=>c.courts[i]&&c.courts[i].length))) curCols.push(i);
+  }
+  if(!curCols.length) curCols=[0];
+  tbl.innerHTML='<thead><tr><th>Игрок</th><th>Персонаж</th><th>Ур.</th><th>Репутация</th><th colspan="'+curCols.length+'">Дворы</th></tr></thead>';
+  const tb=el('tbody');
   vis.forEach(pc=>mainRows(pc).forEach(tr=>tb.appendChild(tr)));
   if(!vis.length){
-    const tr=el('tr'), td=el('td'); td.colSpan=4+TIERS; td.textContent='Пока никто не вошёл.'; tr.appendChild(td); tb.appendChild(tr);
+    const tr=el('tr'), td=el('td'); td.colSpan=4+curCols.length; td.textContent='Пока никто не вошёл.'; tr.appendChild(td); tb.appendChild(tr);
   }
   tbl.appendChild(tb);
   renderChecks();
