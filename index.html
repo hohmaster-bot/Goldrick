@@ -202,9 +202,10 @@ body.dragging,body.dragging *{cursor:grabbing!important}
 .mwrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px}
 .mt{border-collapse:collapse;table-layout:auto;width:max-content;font-size:13px}
 .mt .ent{max-width:250px}
-.mt td.rep .ent{max-width:320px}
+.mt td.rep .ent{max-width:460px}
 .mt th{background:var(--surface-2);font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding:9px 10px;border:1px solid var(--line);text-align:center}
-.mt td{border:1px solid var(--line);padding:6px 10px;vertical-align:middle;max-width:250px}
+.mt td{border:1px solid var(--line);padding:6px 10px;vertical-align:middle}
+.mt td.ct,.mt td.ch{max-width:250px}
 .mt td.pl{min-width:104px;white-space:nowrap}
 .mt td.ch{min-width:84px}
 .mt td.lv{width:1%;min-width:48px}
@@ -1796,7 +1797,7 @@ function charRow(pc,d,ch,idx,n){
     const risk=!!(cur&&s.p!==null&&cur.c.l!==null&&cur.c.l>0&&s.p<=cur.c.l);
     const mkRisk=()=>{const r=el('span','risk');r.textContent='!';r.dataset.tip='РИСК ПОТЕРИ ИСТОРИИ!';r.setAttribute('aria-label','РИСК ПОТЕРИ ИСТОРИИ!');attachTip(r,'РИСК ПОТЕРИ ИСТОРИИ!');return r;};
     if(ed){
-      row.appendChild(mInput(s.n,'История',v=>mset(k,ch.base+'stories/'+s.id+'/n',v),s.id,9));
+      row.appendChild(mInput(s.n,'История',v=>mset(k,ch.base+'stories/'+s.id+'/n',v),s.id,7));
       row.appendChild(mNum(s.p,'0',v=>mset(k,ch.base+'stories/'+s.id+'/p',v)));
       if(risk) row.appendChild(mkRisk());
       const sel=el('select','m-sel'); sel.setAttribute('aria-label','Связанный двор');
