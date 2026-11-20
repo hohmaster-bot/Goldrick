@@ -390,9 +390,14 @@ button.ck-b:hover{background:var(--surface-2)}
 .tr-grid{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
 .tr-left,.tr-right{min-width:0}
 .tr-wrap{margin-bottom:6px}
-.tr-t{width:100%}
+.tr-t{width:auto}
+.tr-t td{text-align:center}
+.tr-t td:first-child{text-align:left}
+.tr-t td .tr-par{justify-content:center}
+.tr-t td .tr-lv{display:flex;flex-direction:column;align-items:center}
+.tr-wrap{width:fit-content;max-width:100%}
 .tr-t td,.tr-t th{white-space:nowrap}
-.tr-t td.tr-nm{text-align:left;font-weight:600;white-space:normal;min-width:120px}
+.tr-t td.tr-nm{text-align:left;font-weight:600;white-space:nowrap}
 .tr-nmc{display:flex;flex-direction:column;gap:3px;align-items:flex-start}
 .tr-ks2{font-size:11px;font-weight:500}
 .tr-in{font:inherit;font-size:13px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surface-2);color:var(--fg);width:70px}
@@ -423,6 +428,19 @@ button.ck-b:hover{background:var(--surface-2)}
 .tr-extra{max-width:none;margin-top:16px}
 .tr-ta{width:100%;margin:8px 0 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--fg);padding:8px}
 @media(max-width:980px){.tr-grid{grid-template-columns:minmax(0,1fr)}}
+
+.tr-lc{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:6px 10px;max-width:760px}
+.tr-empty{margin:6px 0;font-size:13px}
+.tr-le{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)}
+.tr-le:last-child{border-bottom:0}
+.tr-le.free .tr-lt{opacity:.85}
+.tr-le.sub{padding-left:22px;font-size:13px}
+.tr-lt{font-weight:600;font-size:13px}
+.tr-lm{display:inline-flex;gap:8px;align-items:center;flex:none;font-size:12px}
+.tr-sub{font-size:13px;margin:12px 0 6px;font-weight:700}
+.tr-chk{display:block;margin:4px 0;font-size:14px}
+.tr-hd{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.tr-hd .btn{height:28px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -2612,8 +2630,8 @@ $('#tab-req').addEventListener('focusout',()=>setTimeout(()=>{if(reqPending&&tab
 document.addEventListener('pointerup',()=>setTimeout(()=>{if(reqPending&&tab==='req') renderReqSafe();},0),true);
 
 /* ===== TRAIN-PURE-START: чистая логика калькулятора тренировок (без DOM и Firebase) ===== */
-const TR_STATS=[['str','Сила','Str'],['dex','Ловкость','Dex'],['con','Телосложение','Con'],['int','Интеллект','Int'],['wis','Мудрость','Wis'],['cha','Харизма','Cha']];
-const TR_SRC=[['training','тренировка'],['race','раса'],['class','класс'],['template','шаблон'],['loot','лут'],['quirk','причуда'],['other','другое']];
+const TR_STATS=[['str','Сила','Str'],['dex','Ловкость','Dex'],['con','Выносливость','Con'],['int','Интеллект','Int'],['wis','Мудрость','Wis'],['cha','Харизма','Cha']];
+const TR_SRC=[['training','тренировка'],['race','раса'],['class','класс'],['template','шаблон'],['loot','лут'],['quirk','причуда'],['comfort','комфорт'],['other','другое']];
 const TR_TIERS=['обычный','продвинутый','специализированный'];
 const TR_GRADES=['нет','Новичок','Ученик','Любитель','Умелый','Специалист I','Специалист II','Специалист III','Эксперт I','Эксперт II','Эксперт III','Эксперт IV','Мастер'];
 const TRP={
@@ -2623,16 +2641,32 @@ const TRP={
   spec:n=>200+50*n,                                         // n = ДРУГИЕ специализированные
   weapon:(X,d,s)=>(30+5*X)*d*s,                             // X = другие узлы с уровнем >= 8
   basics:s=>50*s,
-  gain:d=>5-d
+  gain:d=>5-d,
+  prof:300, item:n=>50*n, seed:200, sprout:200, man:250,
+  langNative:(natives,intMod)=>natives<intMod?50:100,       // natives = сколько родных языков уже есть
+  langLearn:p=>30*p,                                        // p = проектов от ближайшего родного
+  spell:(c,disc,x)=>Math.max(1,(disc?Math.floor((20+10*c*c)/2):20+10*c*c)-(x||0)),
+  upg:c=>25*(1+c*c),
+  comfort:(n,lv)=>n*(lv+1)*5, lvl:n=>100*n
 };
-const trPaid=e=>e.src==='training'?e.price:0;
+const TR_CNT={
+  react:{n:'Реакции',s:1,price:n=>200*n},
+  attn:{n:'Курс внимательности',s:0,price:()=>200},
+  armor:{n:'Владение бронёй',s:0,max:3,names:['нет','лёгкая','средняя','тяжёлая'],price:()=>250},
+  shield:{n:'Владение щитами',s:0,max:3,names:['нет','лёгкий','тяжёлый','башенный'],price:()=>100},
+  base:{n:'Базовые очки',s:5,price:()=>100}
+};
+const TR_INC={lvl:1,comfort:1};
+const trPaid=e=>(e.src==='training'&&!TR_INC[e.t])?e.price:0;
+const trInc=e=>TR_INC[e.t]?e.price:0;
 const trById=(a,b)=>a.id<b.id?-1:(a.id>b.id?1:0);
 function trInt(v,lo,hi,def){v=Math.trunc(+v);return Number.isFinite(v)?Math.min(hi,Math.max(lo,v)):def;}
 const trList=m=>Array.isArray(m)?m.map((v,i)=>Object.assign({},v,{id:(v&&v.id)||'a'+i})).filter(v=>v&&typeof v==='object'):
   (m&&typeof m==='object'?Object.keys(m).map(id=>Object.assign({},m[id],{id})).filter(v=>v&&typeof v==='object'):[]);
 function trNorm(r){
   r=r&&typeof r==='object'?r:{};
-  const tr={on:!!r.on,cap:trInt(r.cap,0,1000000,1000),lv:trInt(r.lv,0,99,1),st:{},sk:[],wp:[],h:[]};
+  const tr={on:!!r.on,ns:!!r.ns,cap:trInt(r.cap,0,1000000,1000),lv:trInt(r.lv,0,99,1),st:{},c0:{},sk:[],wp:[],h:[]};
+  Object.keys(TR_CNT).forEach(k=>{tr.c0[k]=trInt(r.c0&&r.c0[k],0,999,TR_CNT[k].s);});
   TR_STATS.forEach(([k])=>{const o=(r.st&&r.st[k])||{};tr.st[k]={s:trInt(o.s,-20,99,10),r:trInt(o.r,-20,20,0)};});
   tr.sk=trList(r.sk).sort(trById).map(s=>({id:String(s.id),n:String(s.n||'').slice(0,60)||'Навык',
     k:TR_STATS.some(x=>x[0]===s.k)?s.k:'',t0:trInt(s.t0,0,2,0),r0:trInt(s.r0,0,99,0)}));
@@ -2641,16 +2675,23 @@ function trNorm(r){
     par:(Array.isArray(w.par)?w.par:Object.keys(w.par||{})).map(String)}));
   const wid=new Set(tr.wp.map(w=>w.id)), sid=new Set(tr.sk.map(s=>s.id));
   tr.wp.forEach(w=>{w.par=w.par.filter(p=>p!==w.id&&wid.has(p));});
-  const T={stat:1,rank:1,tier:1,wrank:1,basics:1}, SRC=TR_SRC.map(x=>x[0]);
+  const T={stat:1,rank:1,tier:1,wrank:1,basics:1,cnt:1,lvl:1,comfort:1,prof:1,item:1,lang:1,langn:1,spell:1,upg:1,seed:1,sprout:1,man:1,feat:1,abil:1}, SRC=TR_SRC.map(x=>x[0]);
+  const txt=(v,n)=>String(v==null?'':v).slice(0,n), num=v=>trInt(v,-999,99999,0);
   tr.h=trList(r.h).sort(trById).map(e=>({id:String(e.id),t:T[e.t]?e.t:'',ref:String(e.ref||''),fr:trInt(e.fr,-99,999,0),to:trInt(e.to,-99,999,0),
-    price:trInt(e.price,0,1000000,0),src:SRC.includes(e.src)?e.src:'other'}))
-    .filter(e=>e.t&&(e.t==='stat'?TR_STATS.some(x=>x[0]===e.ref):(e.t==='rank'||e.t==='tier')?sid.has(e.ref):wid.has(e.ref)));
+    price:trInt(e.price,0,1000000,0),src:SRC.includes(e.src)?e.src:'other',n:txt(e.n,80),x:txt(e.x,200),z:txt(e.z,300),a:num(e.a),b:num(e.b),c:num(e.c)}))
+    .filter(e=>e.t&&(e.t==='stat'?TR_STATS.some(x=>x[0]===e.ref):(e.t==='rank'||e.t==='tier')?sid.has(e.ref):(e.t==='wrank'||e.t==='basics')?wid.has(e.ref):e.t==='cnt'?!!TR_CNT[e.ref]:true));
+  const ids=t=>new Set(tr.h.filter(e=>e.t===t).map(e=>e.id)), sp=ids('spell'), sd=ids('seed'), pf=ids('prof');
+  tr.h=tr.h.filter(e=>e.t==='upg'?sp.has(e.ref):e.t==='sprout'?sd.has(e.ref):(e.t==='tier'&&e.x.startsWith('prof:'))?pf.has(e.x.slice(5)):true);
   return tr;
 }
 /* всё считается из списка: ничего скрытого */
 function trDerive(tr){
   const spent=tr.h.reduce((s,e)=>s+trPaid(e),0);
-  const o={spent,left:tr.cap-spent,stats:{},sk:{},wp:{}};
+  const income=tr.h.reduce((s,e)=>s+trInc(e),0);
+  const o={spent,income,total:tr.cap+income,left:tr.cap+income-spent,stats:{},sk:{},wp:{},cnt:{}};
+  Object.keys(TR_CNT).forEach(key=>{const c=TR_CNT[key], n=tr.h.filter(e=>e.t==='cnt'&&e.ref===key).length, cur=tr.c0[key]+n;
+    const mx=key==='base'?10*tr.lv:(c.max===undefined?Infinity:c.max);
+    o.cnt[key]={cur,price:c.price(cur+1),max:mx,block:cur+1>mx?(key==='base'?'Базовых очков не больше 10 × уровень ('+mx+')':'Уже максимум'):''};});
   TR_STATS.forEach(([k])=>{
     const n=tr.h.filter(e=>e.t==='stat'&&e.ref===k).length, c=tr.st[k].s+tr.st[k].r+n;
     o.stats[k]={cur:c,mod:Math.floor((c-10)/2),bought:n,price:TRP.stat(c+1)};
@@ -2689,15 +2730,66 @@ function trDerive(tr){
   });
   return o;
 }
+/* ---- проверки покупок из списков ---- */
+function trLangs(tr){const m=[];tr.h.forEach(e=>{if(e.t==='lang'||e.t==='langn'){const k=e.n.trim().toLowerCase();let l=m.find(x=>x.k===k);
+  if(!l){l={k,n:e.n.trim(),native:false};m.push(l);} if(e.t==='langn'||e.a===1) l.native=true;}});return m;}
+function trLangAdd(tr,name,native,proj,intMod){
+  const nm=String(name||'').trim(); if(!nm) return {err:'Введите название языка',price:0};
+  const L=trLangs(tr); if(L.some(x=>x.k===nm.toLowerCase())) return {err:'Такой язык уже есть (родным его можно сделать кнопкой в списке)',price:0};
+  if(native){const n=L.filter(x=>x.native).length; return {err:'',price:n===0?0:TRP.langNative(n,intMod)};}
+  proj=Math.trunc(+proj); if(!Number.isFinite(proj)||proj<1) return {err:'Укажите число проектов от ближайшего родного (1 и больше)',price:0};
+  return {err:'',price:TRP.langLearn(proj)};
+}
+function trLangMake(tr,name,intMod){
+  const L=trLangs(tr), l=L.find(x=>x.k===String(name).trim().toLowerCase()); if(!l) return {err:'Язык не найден',price:0};
+  if(l.native) return {err:'Этот язык уже родной',price:0};
+  const n=L.filter(x=>x.native).length; return {err:'',price:n===0?0:TRP.langNative(n,intMod)};
+}
+function trSpellSlots(tr,spellId){return tr.h.filter(e=>e.t==='upg'&&e.ref===spellId).reduce((s,e)=>s+e.c,0);}
+function trUpgCheck(tr,spellId,name,meta,inc){
+  const sp=tr.h.find(e=>e.t==='spell'&&e.id===spellId); if(!sp) return {err:'Выберите заклинание',price:0,slots:0};
+  const nm=String(name||'').trim(); if(!nm) return {err:'Введите название улучшения',price:0,slots:0};
+  let slots;
+  if(meta){inc=Math.trunc(+inc); if(!Number.isFinite(inc)||inc<1) return {err:'Метамагия: укажите прирост круга (1 и больше)',price:0,slots:0}; slots=inc;}
+  else slots=tr.h.filter(e=>e.t==='upg'&&e.ref===spellId&&e.a===0&&e.n.trim().toLowerCase()===nm.toLowerCase()).length+1;
+  const used=trSpellSlots(tr,spellId); if(used+slots>3) return {err:'Не хватает слотов: нужно '+slots+', свободно '+(3-used),price:0,slots};
+  return {err:'',price:TRP.upg(sp.a),slots};
+}
+function trProfCheck(tr,P,ids){
+  P=Math.trunc(+P); if(tr.h.some(e=>e.t==='prof')) return {err:'Профессионализм уже куплен',need:0};
+  if(!Number.isFinite(P)||P<2) return {err:'Нужно минимум 2 очка навыков класса',need:0};
+  const need=Math.min(4,Math.floor(P/2)); if(ids.length!==need) return {err:'Нужно выбрать ровно '+need+' навык(а) для специализации',need};
+  const d=trDerive(tr);
+  for(const id of ids){if(!tr.sk.some(s=>s.id===id)) return {err:'Навык не найден',need}; if(d.sk[id].tier===2) return {err:'Навык уже специализированный',need};}
+  if(new Set(ids).size!==ids.length) return {err:'Навыки не должны повторяться',need};
+  return {err:'',need};
+}
+function trItemCheck(tr,name,N){
+  const nm=String(name||'').trim(); if(!nm) return {err:'Введите название предмета',price:0};
+  N=Math.trunc(+N); if(!Number.isFinite(N)||N<1) return {err:'Укажите номер предмета (1 и больше)',price:0};
+  if(tr.h.some(e=>e.t==='item'&&e.n.trim().toLowerCase()===nm.toLowerCase())) return {err:'Квалификация этого предмета уже куплена',price:0};
+  return {err:'',price:TRP.item(N)};
+}
 const trGrade=n=>TR_GRADES[Math.max(0,Math.min(12,n))];
 /* текст для копирования: без цен тренировок */
 function trExportText(tr){
   const d=trDerive(tr), L=[];
   TR_STATS.forEach(([k,ru,en])=>{const s=d.stats[k]; if(s.bought) L.push('Характеристика '+en+' '+s.cur+' (куплено +'+s.bought+')');});
   tr.sk.forEach(s=>{const x=d.sk[s.id]; if(x.tier>0||x.rank>0||x.tierN||x.rankN)
-    L.push('Навык '+s.n+', ранг '+x.rank+(x.tier>0?', '+(x.tier===1?'продвинутый':'специализированный'):''));});
+    L.push('Навык '+s.n+', ранг '+x.rank+(x.tier>0?', '+(x.tier===1?'продвинутый (+3 к броску)':'специализированный (+3 к броску, ранг до уровня бесплатно)'):''));});
   tr.wp.forEach(w=>{const x=d.wp[w.id]; if(x.eff>0||x.wN||x.own)
     L.push('Оружейная группа '+w.n+' (масштаб '+w.sc+', сложность '+w.df+') лвл '+x.eff+', '+trGrade(x.eff).replace(/^./,c=>c.toLowerCase())+(x.own?', боевые основы':''));});
+  Object.keys(TR_CNT).forEach(key=>{const c=TR_CNT[key], x=d.cnt[key]; if(tr.h.some(e=>e.t==='cnt'&&e.ref===key)) L.push(c.n+': '+(c.names?c.names[x.cur]:x.cur));});
+  const lvl=tr.h.filter(e=>e.t==='lvl').length; if(lvl) L.push('Уровень персонажа: '+tr.lv);
+  const pr=tr.h.find(e=>e.t==='prof'); if(pr) L.push('Профессионализм: '+pr.x.split(',').map(id=>{const s=tr.sk.find(q=>q.id===id);return s?s.n:'?';}).join(', '));
+  tr.h.filter(e=>e.t==='item').forEach(e=>L.push('Квалификация предмета «'+e.n+'» №'+e.a));
+  trLangs(tr).forEach(l=>L.push('Язык '+l.n+(l.native?' (родной)':' (не родной)')));
+  tr.h.filter(e=>e.t==='spell').forEach(e=>{L.push('Заклинание '+e.n+', круг '+e.a);
+    tr.h.filter(u=>u.t==='upg'&&u.ref===e.id).forEach(u=>L.push('  улучшение «'+u.n+'»'+(u.a?' (метамагия +'+u.b+' круг)':'')));});
+  tr.h.filter(e=>e.t==='seed').forEach(e=>L.push('Семя'+(e.n?' '+e.n:'')+(tr.h.some(s=>s.t==='sprout'&&s.ref===e.id)?', проросло':'')));
+  tr.h.filter(e=>e.t==='man').forEach(e=>L.push('Боевой приём '+e.n+(e.x?' ('+e.x+')':'')+(e.z?': '+e.z:'')));
+  tr.h.filter(e=>e.t==='feat').forEach(e=>L.push('Черта '+e.n));
+  tr.h.filter(e=>e.t==='abil').forEach(e=>L.push('Способность ('+(e.a?'класс':'раса')+') '+e.n));
   return 'Итого куплено:\n'+(L.length?L.join('\n'):'(пока ничего)');
 }
 /* ===== TRAIN-PURE-END ===== */
@@ -2705,6 +2797,34 @@ function trExportText(tr){
 /* ---------- «Создать персонажа»: калькулятор очков тренировки, данные в board/main/train/{цвет} ---------- */
 const TP='board/main/train';
 let trains={}, trSel=null, trEdit=false, trSrcSel='other', trPending=false, trSeq=0;
+
+/* список навыков правил: [название, стат, семейство (нужно уточнение), суть] */
+const TR_SKLIB=[
+['Атлетика','str',0,'плавание, подтягивание, перенос грузов'],['Акробатика','dex',0,'контроль тела, избегание противника, падения'],
+['Сноровка','dex',0,'мелкая моторика, карманные кражи, фокусы'],['Скрытность','dex',0,'скрыть себя или предметы'],
+['Пилотирование','dex',1,'воздух / вода / космос, каждый вид отдельный'],['Вождение','dex',0,'наземная техника с пассажирами'],
+['Управление','dex',0,'баллисты, катапульты (стрельба и перезарядка)'],['Полёт','dex',0,'перемещение в воздухе; бесполезен без крыльев'],
+['Концентрация','con',0,'действовать под стрессом, в минусах (КС 20)'],
+['Оценка','int',0,'отличить дорогое от дешёвого, цена лута'],['Расшифровка','int',0,'шифры, ключи, паттерны (помогает тренировкам)'],
+['Механика','int',0,'замки, устройства, починка техники'],['Ремесло I','int',1,'добывающее: травы, кожа, руда'],
+['Ремесло II','int',1,'обрабатывающее: обучать солдат, красить, агентура'],['Ремесло III','int',1,'производственное: вещи по рецептам'],
+['Подделка','int',0,'подлоги, фальшивые документы, вирусы'],['Поиск','int',0,'найти спрятанные предметы (не живых)'],
+['Искусство магии','int',0,'изменять магию, магические предметы'],['Лингвистика','int',0,'изучение языков'],
+['Знание (магия)','int',0,'теория магии, существ, предметов'],['Знание (инженерия)','int',0,'здания, техника, механизмы'],
+['Знание (монстроведение)','int',0,'монстры вообще, ценный лут'],['Знание (география и экономика)','int',0,'цены, города, знакомые'],
+['Знание (история)','int',0,'прошлое, паттерны, аналогии'],['Знание (культура)','int',1,'отдельно для каждого региона'],
+['Знание (природа)','int',0,'травы, животные, погода'],['Знание (политика)','int',0,'этикет, геральдика, главное лицо'],
+['Знание (религия)','int',0,'церкви, Дворы, нежить'],['Знание (бой и война)','int',0,'стили боя, армия, оценка противника'],
+['Знание (другие миры)','int',0,'планы, пришельцы, контракты'],['Знание (IT)','int',0,'информационные технологии, чёрные ящики'],
+['Первая помощь','wis',0,'полевая медицина, остановить кровь'],['Медицина','wis',0,'лечение тяжёлых травм, между сессиями'],
+['Восприятие','wis',0,'заметить неладное, найти прячущегося'],['Эмпатия','wis',0,'понять ложь, собрать информацию'],
+['Выживание','wis',0,'еда, укрытие, погода, вода'],['Самогипноз','wis',0,'подавить ментальное, помогает восстановить баланс'],
+['Блеф','cha',0,'обман (бросок только если подозревают)'],['Запугивание','cha',0,'внушить ужас, выбить информацию'],
+['Дипломатия','cha',0,'договориться, убедить, торговаться'],['Маскировка','cha',0,'выдать себя за другого'],
+['Обращение с животными','cha',0,'верховая езда, тренировка существ'],['Актёрское мастерство','cha',1,'дерево: инструменты, поведение (по искусствам)'],
+['Оружейные трюки','cha',0,'эффектный бой для союзников и врагов'],['Магические устройства','cha',0,'перенастройка магических предметов']];
+const TR_FAMHINT={'Пилотирование':'вид техники','Ремесло I':'какое ремесло','Ремесло II':'какое ремесло','Ремесло III':'какое ремесло','Знание (культура)':'регион','Актёрское мастерство':'какое искусство'};
+const trStartSkills=()=>['Восприятие','Поиск'].map(n=>{const s=TR_SKLIB.find(x=>x[0]===n);return {id:trNewId(),n,k:s[1],t0:0,r0:0};});
 function parseTrain(m){
   const t=(m&&m.train&&typeof m.train==='object')?m.train:{}, out={};
   PCOLORS.forEach(c=>{if(t[c.k]) out[c.k]=trNorm(t[c.k]);});
@@ -2712,10 +2832,10 @@ function parseTrain(m){
 }
 const trGet=k=>trains[k]||trNorm({});
 function trSer(tr){
-  const o={on:tr.on?1:null,cap:tr.cap,lv:tr.lv,st:tr.st,sk:{},wp:{},h:{}};
+  const o={on:tr.on?1:null,ns:tr.ns?1:null,cap:tr.cap,lv:tr.lv,st:tr.st,c0:tr.c0,sk:{},wp:{},h:{}};
   tr.sk.forEach(s=>{o.sk[s.id]={n:s.n,k:s.k,t0:s.t0,r0:s.r0};});
   tr.wp.forEach(w=>{const p={};w.par.forEach(x=>{p[x]=1;});o.wp[w.id]={n:w.n,sc:w.sc,df:w.df,g0:w.g0,simple:w.simple?1:null,par:w.par.length?p:null};});
-  tr.h.forEach(e=>{o.h[e.id]={t:e.t,ref:e.ref,fr:e.fr,to:e.to,price:e.price,src:e.src};});
+  tr.h.forEach(e=>{o.h[e.id]={t:e.t,ref:e.ref||null,fr:e.fr,to:e.to,price:e.price,src:e.src,n:e.n||null,x:e.x||null,z:e.z||null,a:e.a||null,b:e.b||null,c:e.c||null};});
   return o;
 }
 const trNewId=()=>(db?R(TP).push().key:'l'+Date.now().toString(36)+(trSeq++));
@@ -2727,8 +2847,8 @@ function trCommit(k,tr){
   renderTrain();
 }
 /* покупка: проверка капа; возвращает true, если запись добавлена */
-function trBuy(k,tr,e,askedPrice){
-  const src=trEdit?trSrcSel:'training', pay=src==='training'?askedPrice:0, d=trDerive(tr);
+function trBuy(k,tr,e,askedPrice,src0){
+  const src=src0||(trEdit?trSrcSel:'training'), pay=src==='training'?askedPrice:0, d=trDerive(tr);
   if(pay>d.left){toast('Не хватает очков: нужно '+pay+', осталось '+d.left);return false;}
   tr.h.push(Object.assign({id:trNewId(),src,price:pay},e)); return true;
 }
@@ -2737,8 +2857,12 @@ function trRemoveLast(tr,pred){
   return null;
 }
 function trAct(k,fn){
-  if(!trCanEdit(k)) return;
-  const tr=trClone(trGet(k)); if(fn(tr)!==false) trCommit(k,tr); else renderTrain();
+  if(!trCanEdit(k)) return false;
+  const tr=trClone(trGet(k)), before=trDerive(tr).left;
+  if(fn(tr)===false){renderTrain();return false;}
+  const t2=trNorm(tr), after=trDerive(t2).left;
+  if(after<0&&after<before){toast('Не хватает очков: правка превысит общий запас');renderTrain();return false;}
+  trCommit(k,t2); return true;
 }
 function trRaiseStat(k,key){trAct(k,tr=>{const s=trDerive(tr).stats[key];
   return trBuy(k,tr,{t:'stat',ref:key,fr:s.cur,to:s.cur+1},s.price);});}
@@ -2756,6 +2880,7 @@ function trSetTier(k,id,T){trAct(k,tr=>{
     let t=s.tier; need.forEach(p=>{tr.h.push({id:trNewId(),t:'tier',ref:id,fr:t,to:t+1,price:src==='training'?p:0,src});t++;});
   }else{
     const n=s.tier-T; let removed=0;
+    if(s.tE.slice(-n).some(e=>e.x&&e.x.startsWith('prof:'))){toast('Эта специализация получена за «Профессионализм» — отмените его в списке (режим правки)');return false;}
     for(let i=0;i<n;i++) if(trRemoveLast(tr,e=>e.t==='tier'&&e.ref===id)) removed++;
     if(removed<n){ // остаток — бесплатный уровень из «базы»
       if(!trEdit){toast('Этот уровень получен бесплатно (раса/класс). Менять его можно в режиме правки.');return false;}
@@ -2802,6 +2927,7 @@ function trSrcLabel(s){const x=TR_SRC.find(a=>a[0]===s); return x?x[1]:s;}
 function trHistText(tr,e){
   const nm=id=>{const s=tr.sk.find(x=>x.id===id)||tr.wp.find(x=>x.id===id);return s?s.n:'?';};
   if(e.t==='stat'){const s=TR_STATS.find(x=>x[0]===e.ref);return s[1]+' '+e.fr+' → '+e.to;}
+  if(!['rank','tier','wrank','basics'].includes(e.t)) return trEntryText(tr,e);
   if(e.t==='rank') return 'Навык «'+nm(e.ref)+'»: ранг '+e.fr+' → '+e.to;
   if(e.t==='tier') return 'Навык «'+nm(e.ref)+'»: '+TR_TIERS[e.fr]+' → '+TR_TIERS[e.to];
   if(e.t==='wrank') return 'Группа «'+nm(e.ref)+'»: '+trGrade(e.fr)+' → '+trGrade(e.to)+' (лвл '+e.fr+' → '+e.to+')';
@@ -2812,8 +2938,9 @@ function trTopBar(k,tr,d,own){
   const row=el('div','tr-nums');
   const cell=(l,v,cls)=>{const c=el('div','tr-num'+(cls?' '+cls:''));c.appendChild(elt('span','muted',l));c.appendChild(elt('b','',String(v)));return c;};
   row.appendChild(cell('Потрачено',d.spent)); row.appendChild(cell('Осталось',d.left,d.left<0?'bad':''));
+  if(d.income) row.appendChild(cell('Доход (уровни, комфорт)','+'+d.income));
   const capc=el('div','tr-num'); capc.appendChild(elt('span','muted','Всего очков тренировки'));
-  if(own) capc.appendChild(trNumIn(tr.cap,d.spent,1000000,v=>trSetField(k,t=>{t.cap=Math.max(v,trDerive(t).spent);}),'84px')); else capc.appendChild(elt('b','',String(tr.cap)));
+  if(own) capc.appendChild(trNumIn(tr.cap,Math.max(0,d.spent-d.income),1000000,v=>trSetField(k,t=>{const dd=trDerive(t);t.cap=Math.max(v,dd.spent-dd.income);}),'84px')); else capc.appendChild(elt('b','',String(tr.cap)));
   row.appendChild(capc);
   const lvc=el('div','tr-num'); lvc.appendChild(elt('span','muted','Уровень персонажа'));
   if(own) lvc.appendChild(trNumIn(tr.lv,0,99,v=>trSetField(k,t=>{t.lv=v;}),'64px')); else lvc.appendChild(elt('b','',String(tr.lv)));
@@ -2863,10 +2990,12 @@ function trTierBtns(k,tr,d,s,sd,own){
   return w;
 }
 function trSkillsBlock(k,tr,d,own){
-  const box=el('div'); box.appendChild(elt('h2','rh','Навыки'));
+  const box=el('div'); const hd=el('div','tr-hd'); hd.appendChild(elt('h2','rh','Навыки'));
+  if(own){const sb=lbtn(tr.ns?'Сортировка по стату: выкл.':'Сортировка по стату: вкл.','',()=>trSetField(k,t=>{t.ns=!t.ns;})); hd.appendChild(sb);} box.appendChild(hd);
   const T=trTable(['Навык','Уровень навыка','Ранг','Цена ранга','']);
   if(!tr.sk.length){const r=el('tr'),c=trTd('Навыков пока нет — добавьте кнопкой ниже.','muted'); c.colSpan=5; r.appendChild(c); T.tb.appendChild(r);}
-  tr.sk.forEach(s=>{
+  const sorted=tr.ns?tr.sk.slice():tr.sk.slice().sort((a,b)=>{const ia=a.k?TR_STATS.findIndex(x=>x[0]===a.k):9, ib=b.k?TR_STATS.findIndex(x=>x[0]===b.k):9; return ia-ib;});
+  sorted.forEach(s=>{
     const sd=d.sk[s.id], r=el('tr');
     const nm=el('div','tr-nmc');
     if(own&&trEdit){const i=el('input','tr-in tr-name'); i.type='text'; i.value=s.n; i.maxLength=60; i.addEventListener('change',()=>trSetField(k,t=>{const x=t.sk.find(q=>q.id===s.id);if(x) x.n=i.value.trim()||'Навык';})); nm.appendChild(i);}
@@ -2943,7 +3072,7 @@ function trHistBlock(k,tr,d,own){
   const box=el('div','tr-hist'); box.appendChild(elt('h2','rh','История покупок'));
   if(!tr.h.length){box.appendChild(elt('p','hint','Покупок пока нет.'));return box;}
   let run=tr.cap; const rows=[];
-  tr.h.forEach(e=>{run-=trPaid(e); rows.push({e,run});});
+  tr.h.forEach(e=>{run=run-trPaid(e)+trInc(e); rows.push({e,run});});
   rows.reverse().forEach(({e,run})=>{
     const c=el('div','tr-he'+(e.src!=='training'?' free':''));
     c.appendChild(elt('div','tr-ht',trHistText(tr,e)));
@@ -2956,7 +3085,7 @@ function trHistBlock(k,tr,d,own){
         if(dd.left<0&&trPaid(q)>before){toast('Не хватает очков: правка превышает кап');return false;}})); m.appendChild(sel);
       const b=lbtn('✕','danger',bt=>arm(bt,()=>trAct(k,t=>{t.h=t.h.filter(z=>z.id!==e.id);}))); b.title='Удалить запись (цена уйдёт из «потрачено»)'; m.appendChild(b);
     }else{
-      m.appendChild(elt('span','tr-hp',trPaid(e)?'−'+trPaid(e):'0'));
+      m.appendChild(elt('span','tr-hp',TR_INC[e.t]?'+'+e.price:(trPaid(e)?'−'+trPaid(e):'0')));
       m.appendChild(elt('span','muted',trSrcLabel(e.src)));
     }
     m.appendChild(elt('span','muted tr-run','осталось '+run)); c.appendChild(m); box.appendChild(c);
@@ -2989,13 +3118,18 @@ function renderTrain(){
     const c=el('div','lcard tr-start');
     c.appendChild(elt('div','lch','Создание персонажа'));
     c.appendChild(elt('p','lp muted',(isMaster()?nickOf(k)+': калькулятор ещё не запущен. ':'')+'Калькулятор тренировки не запущен. Нажмите кнопку, чтобы открыть характеристики, навыки и оружейные группы.'));
-    const row=el('div','lrow'); row.appendChild(lbtn('Начать создание персонажа','primary',()=>trAct(k,t=>{t.on=true;}))); c.appendChild(row);
+    const row=el('div','lrow'); row.appendChild(lbtn('Начать создание персонажа','primary',()=>trAct(k,t=>{t.on=true; if(!t.sk.length) t.sk=trStartSkills();}))); c.appendChild(row);
     root.appendChild(c); return;
   }
   root.appendChild(elt('p','hint tr-note','Это только калькулятор: он считает очки тренировки и ведёт список покупок, ничего больше не меняется.'));
   root.appendChild(trTopBar(k,tr,d,own));
   const g=el('div','tr-grid'), left=el('div','tr-left'), right=el('div','tr-right');
-  left.appendChild(trStatsBlock(k,tr,d,own)); left.appendChild(trSkillsBlock(k,tr,d,own)); left.appendChild(trWeaponsBlock(k,tr,d,own));
+  left.appendChild(trStatsBlock(k,tr,d,own)); left.appendChild(trCountersBlock(k,tr,d,own)); left.appendChild(trSkillsBlock(k,tr,d,own)); left.appendChild(trWeaponsBlock(k,tr,d,own));
+  left.appendChild(trSpecialBlock(k,tr,d,own));
+  left.appendChild(trLangsBlock(k,tr,d,own)); left.appendChild(trSpellsBlock(k,tr,d,own)); left.appendChild(trSeedsBlock(k,tr,d,own));
+  left.appendChild(trListBlock(k,tr,d,own,'Боевые приёмы',e=>e.t==='man',[lbtn('+ Боевой приём −'+((trEdit&&trSrcSel!=='training')?0:TRP.man),'primary',()=>trManModal(k))],null,'Приёмов пока нет.'));
+  left.appendChild(trListBlock(k,tr,d,own,'Черты',e=>e.t==='feat',[lbtn('+ Добавить черту','primary',()=>trFeatModal(k,'feat'))],null,'Черт пока нет.'));
+  left.appendChild(trListBlock(k,tr,d,own,'Доп. способности за расу и класс',e=>e.t==='abil',[lbtn('+ Добавить способность','primary',()=>trFeatModal(k,'abil'))],null,'Способностей пока нет.'));
   right.appendChild(trHistBlock(k,tr,d,own)); g.appendChild(left); g.appendChild(right); root.appendChild(g);
   root.appendChild(trExtraBlock(k,tr,own));
 }
@@ -3012,16 +3146,30 @@ document.addEventListener('pointerup',()=>setTimeout(()=>{if(trPending&&tab==='c
 function trAddSkillModal(k){
   openModal((m,close)=>{
     m.appendChild(elt('h2','rh','Новый навык'));
-    m.appendChild(elt('label','l','Название')); const n=el('input'); n.type='text'; n.maxLength=60; m.appendChild(n);
-    m.appendChild(elt('label','l','Ключевая характеристика (необязательно)'));
-    const ks=el('select','m-sel'); ks.style.width='100%'; const o0=el('option'); o0.value=''; o0.textContent='— нет —'; ks.appendChild(o0);
-    TR_STATS.forEach(([v,ru])=>{const o=el('option');o.value=v;o.textContent=ru;ks.appendChild(o);}); m.appendChild(ks);
+    m.appendChild(elt('label','l','Навык из списка правил'));
+    const sel=el('select','m-sel'); sel.style.width='100%';
+    const stOrder=['str','dex','con','int','wis','cha'];
+    stOrder.forEach(sk=>{const g=el('optgroup'); const st=TR_STATS.find(x=>x[0]===sk); g.label=st[1];
+      TR_SKLIB.forEach((x,i)=>{if(x[1]!==sk) return; const o=el('option'); o.value=String(i); o.textContent=x[0]+(x[2]?' (х)':'')+' — '+x[3]; g.appendChild(o);}); sel.appendChild(g);});
+    const oc=el('option'); oc.value='__custom'; oc.textContent='— свой навык (не из списка) —'; sel.appendChild(oc); m.appendChild(sel);
+    const lab=el('label','l'); m.appendChild(lab);
+    const n=el('input'); n.type='text'; n.maxLength=60; m.appendChild(n);
+    const kl=elt('label','l','Ключевая характеристика (для своего навыка)'); m.appendChild(kl);
+    const ks=el('select','m-sel'); ks.style.width='100%'; TR_STATS.forEach(([v,ru])=>{const o=el('option');o.value=v;o.textContent=ru;ks.appendChild(o);}); m.appendChild(ks);
+    const upd=()=>{const c=sel.value==='__custom', x=c?null:TR_SKLIB[+sel.value];
+      lab.textContent=c?'Название':(x[2]?'Уточнение: '+TR_FAMHINT[x[0]]:'Название (готово, менять не нужно)');
+      n.style.display=(c||(x&&x[2]))?'':'none'; lab.style.display=n.style.display; kl.style.display=ks.style.display=c?'':'none';};
+    sel.addEventListener('change',upd); upd();
     const row=el('div','lrow');
-    const go=()=>{const nm=n.value.trim(); if(!nm){toast('Введите название');return;}
-      trAct(k,tr=>{tr.sk.push({id:trNewId(),n:nm.slice(0,60),k:ks.value,t0:0,r0:0});}); close();};
+    const go=()=>{
+      let nm,key;
+      if(sel.value==='__custom'){nm=n.value.trim(); key=ks.value; if(!nm){toast('Введите название');return;}}
+      else{const x=TR_SKLIB[+sel.value]; key=x[1]; nm=x[0]; if(x[2]){const sub=n.value.trim(); if(!sub){toast('Укажите: '+TR_FAMHINT[x[0]]);return;} nm=x[0]+': '+sub;}}
+      const tr=trGet(k); if(tr.sk.some(s=>s.n.toLowerCase()===nm.toLowerCase())){toast('Такой навык уже добавлен');return;}
+      trAct(k,t=>{t.sk.push({id:trNewId(),n:nm.slice(0,60),k:key,t0:0,r0:0});}); close();};
     row.appendChild(lbtn('Добавить','primary',go)); row.appendChild(lbtn('Отмена','',close)); m.appendChild(row);
     n.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go();}});
-  });
+  },{noFocus:true});
 }
 function trAddWeaponModal(k){
   openModal((m,close)=>{
@@ -3053,6 +3201,217 @@ function trImportModal(k){
     }));
     row.appendChild(lbtn('Отмена','',close)); m.appendChild(row);
   });
+}
+
+/* ---------- расширения: счётчики, списки, особые покупки ---------- */
+const trPayTxt=(price,src)=>(src==='training'?price:0)+' оч.';
+function trEntryText(tr,e){
+  const nm=id=>{const s=tr.sk.find(x=>x.id===id)||tr.wp.find(x=>x.id===id)||tr.h.find(x=>x.id===id);return s?s.n:'?';};
+  switch(e.t){
+    case 'cnt':{const c=TR_CNT[e.ref];return c.n+': '+(c.names?c.names[e.fr]+' → '+c.names[e.to]:e.fr+' → '+e.to);}
+    case 'lvl': return 'Уровень персонажа '+e.fr+' → '+e.to+' (+'+e.price+' очков)';
+    case 'comfort': return 'Обмен комфорта: '+e.a+' → +'+e.price+' очков';
+    case 'prof': return 'Профессионализм: '+e.x.split(',').map(nm).join(', ');
+    case 'item': return 'Квалификация предмета «'+e.n+'» №'+e.a;
+    case 'lang': return 'Язык «'+e.n+'» — '+(e.a?'родной':'не родной, проектов от родного: '+e.b);
+    case 'langn': return 'Язык «'+e.n+'»: стал родным';
+    case 'spell': return 'Заклинание «'+e.n+'», круг '+e.a+(e.b?', скидка':'')+(e.c?' (доп. скидка '+e.c+')':'');
+    case 'upg': return 'Улучшение «'+e.n+'» для «'+nm(e.ref)+'»'+(e.a?' (метамагия +'+e.b+' круг)':'')+', слотов: '+e.c;
+    case 'seed': return 'Семя'+(e.n?' «'+e.n+'»':'');
+    case 'sprout': return 'Проращивание семени «'+(nm(e.ref)||'')+'»';
+    case 'man': return 'Боевой приём «'+e.n+'»'+(e.x?' · группа: '+e.x:'')+(e.z?' · '+e.z:'');
+    case 'feat': return '[черта] '+e.n;
+    case 'abil': return '['+(e.a?'класс':'раса')+'] '+e.n;
+  }
+  return '';
+}
+function trCntRaise(k,key){trAct(k,tr=>{const x=trDerive(tr).cnt[key]; if(x.block&&!(trEdit&&key==='base')){toast(x.block);return false;}
+  return trBuy(k,tr,{t:'cnt',ref:key,fr:x.cur,to:x.cur+1},x.price);});}
+function trCntLower(k,key){trAct(k,tr=>{if(!trRemoveLast(tr,e=>e.t==='cnt'&&e.ref===key)){toast('Это уже стартовое значение');return false;}});}
+function trLvlRaise(k){trAct(k,tr=>{const to=tr.lv+1; tr.h.push({id:trNewId(),t:'lvl',fr:tr.lv,to,price:TRP.lvl(to),src:'training'}); tr.lv=to;});}
+function trLvlLower(k){trAct(k,tr=>{const e=trRemoveLast(tr,x=>x.t==='lvl'); if(!e){toast('Уровень повышен не через эту кнопку — поменяйте его в поле «Уровень персонажа»');return false;} tr.lv=Math.max(0,e.fr);});}
+function trCountersBlock(k,tr,d,own){
+  const box=el('div'); box.appendChild(elt('h2','rh','Счётчики'));
+  const T=trTable(['','Сейчас','Цена +1','']); const free=trEdit&&trSrcSel!=='training';
+  Object.keys(TR_CNT).forEach(key=>{
+    const c=TR_CNT[key], x=d.cnt[key], r=el('tr');
+    r.appendChild(trTd(c.n,'tr-nm')); r.appendChild(trTd(c.names?c.names[x.cur]:String(x.cur),'tr-b'));
+    const pc=trTd(x.block&&!(trEdit&&key==='base')?'—':(free?'0':String(x.price)),'tr-price'); if(x.block) pc.title=x.block; else if(!free&&x.price>d.left) pc.classList.add('bad'); r.appendChild(pc);
+    const cl=el('span','tr-bt');
+    if(own){cl.appendChild(trRowBtns(!x.block||(trEdit&&key==='base'),()=>trCntRaise(k,key),()=>trCntLower(k,key),'+1'));
+      if(trEdit){cl.appendChild(elt('span','muted tr-lbl','старт')); cl.appendChild(trNumIn(tr.c0[key],0,999,v=>trSetField(k,t=>{t.c0[key]=v;}),'50px'));}}
+    r.appendChild(trTd(cl)); T.tb.appendChild(r);
+  });
+  const r=el('tr'); r.appendChild(trTd('Уровень персонажа','tr-nm')); r.appendChild(trTd(String(tr.lv),'tr-b'));
+  r.appendChild(trTd('+'+TRP.lvl(tr.lv+1)+' очков','tr-price'));
+  r.appendChild(trTd(own?trRowBtns(true,()=>trLvlRaise(k),()=>trLvlLower(k),'+1'):'')); T.tb.appendChild(r);
+  box.appendChild(T.wrap); return box;
+}
+/* ---- списки ---- */
+function trEntryRow(k,tr,e,own,extra){
+  const r=el('div','tr-le'+(e.src!=='training'&&!TR_INC[e.t]?' free':''));
+  r.appendChild(elt('span','tr-lt',trEntryText(tr,e)));
+  const m=el('span','tr-lm');
+  m.appendChild(elt('b','',TR_INC[e.t]?'+'+e.price:(trPaid(e)?'−'+trPaid(e):'0'))); m.appendChild(elt('span','muted tr-src',trSrcLabel(e.src)));
+  if(extra) m.appendChild(extra);
+  if(own&&trEdit){const b=lbtn('✕','danger',bt=>arm(bt,()=>trAct(k,t=>{t.h=t.h.filter(z=>z.id!==e.id);}))); b.title='Удалить запись (цена уйдёт из «потрачено»)'; m.appendChild(b);}
+  r.appendChild(m); return r;
+}
+function trListBlock(k,tr,d,own,title,pred,btns,extraFn,empty){
+  const box=el('div'); box.appendChild(elt('h2','rh',title));
+  const card=el('div','tr-lc'), es=tr.h.filter(pred);
+  if(!es.length) card.appendChild(elt('p','muted tr-empty',empty||'Пока пусто.'));
+  es.forEach(e=>card.appendChild(trEntryRow(k,tr,e,own,extraFn?extraFn(e):null)));
+  box.appendChild(card);
+  if(own&&btns.length){const row=el('div','lrow'); btns.forEach(b=>row.appendChild(b)); box.appendChild(row);}
+  return box;
+}
+function trLangsBlock(k,tr,d,own){
+  const L=trLangs(tr), im=d.stats.int.mod, seen=new Set();
+  return trListBlock(k,tr,d,own,'Языки',e=>e.t==='lang'||e.t==='langn',
+    [lbtn('+ Добавить язык','primary',()=>trLangModal(k))],
+    e=>{ if(e.t!=='lang'||!own) return null; const key=e.n.trim().toLowerCase(); if(seen.has(key)) return null; seen.add(key);
+      const l=L.find(x=>x.k===key); if(!l||l.native) return null;
+      const p=trLangMake(tr,e.n,im).price, free=trEdit&&trSrcSel!=='training';
+      return lbtn('Сделать родным −'+(free?0:p),'',()=>trLangNative(k,e.n)); },'Языков пока нет.');
+}
+function trLangNative(k,name){trAct(k,tr=>{const r=trLangMake(tr,name,trDerive(tr).stats.int.mod); if(r.err){toast(r.err);return false;}
+  return trBuy(k,tr,{t:'langn',n:name.trim(),fr:0,to:0},r.price);});}
+function trSpellsBlock(k,tr,d,own){
+  const box=el('div'); box.appendChild(elt('h2','rh','Заклинания и улучшения'));
+  const card=el('div','tr-lc'), sp=tr.h.filter(e=>e.t==='spell');
+  if(!sp.length) card.appendChild(elt('p','muted tr-empty','Заклинаний пока нет.'));
+  sp.forEach(s=>{
+    const used=trSpellSlots(tr,s.id);
+    card.appendChild(trEntryRow(k,tr,s,own,elt('span','muted','слоты '+used+'/3')));
+    tr.h.filter(u=>u.t==='upg'&&u.ref===s.id).forEach(u=>{const r=trEntryRow(k,tr,u,own); r.classList.add('sub'); card.appendChild(r);});
+  });
+  box.appendChild(card);
+  if(own){const row=el('div','lrow'); row.appendChild(lbtn('+ Добавить заклинание','primary',()=>trSpellModal(k)));
+    const ub=lbtn('+ Улучшение заклинания','',()=>trUpgModal(k)); if(!sp.length) ub.classList.add('off'); row.appendChild(ub); box.appendChild(row);}
+  return box;
+}
+function trSeedsBlock(k,tr,d,own){
+  const free=trEdit&&trSrcSel!=='training';
+  return trListBlock(k,tr,d,own,'Семена',e=>e.t==='seed'||e.t==='sprout',
+    [lbtn('+ Новое семя −'+(free?0:TRP.seed),'primary',()=>trSeedModal(k))],
+    e=>{ if(e.t!=='seed'||!own) return null; const sprouted=tr.h.some(s=>s.t==='sprout'&&s.ref===e.id);
+      if(sprouted) return elt('span','muted','проросло ✓');
+      const b=lbtn('Прорастить −'+(free?0:TRP.sprout),'',()=>trSprout(k,e.id)); if(!free&&TRP.sprout>d.left) b.classList.add('off'); return b; },'Семян пока нет.');
+}
+function trSprout(k,id){trAct(k,tr=>{if(tr.h.some(s=>s.t==='sprout'&&s.ref===id)){toast('Это семя уже проросло');return false;}
+  return trBuy(k,tr,{t:'sprout',ref:id,fr:0,to:0},TRP.sprout);});}
+function trSpecialBlock(k,tr,d,own){
+  const box=el('div'); box.appendChild(elt('h2','rh','Особые покупки'));
+  const free=trEdit&&trSrcSel!=='training';
+  const done=tr.h.some(e=>e.t==='prof');
+  box.appendChild(trListBlock(k,tr,d,own,'Профессионализм (один раз, '+TRP.prof+')',e=>e.t==='prof',
+    done?[]:[lbtn('Купить профессионализм −'+(free?0:TRP.prof),'primary',()=>trProfModal(k))],null,'Не куплен.'));
+  box.lastChild.querySelector('h2').className='tr-sub';
+  const b2=trListBlock(k,tr,d,own,'Квалификация предметов (50 × номер, один раз на предмет)',e=>e.t==='item',[lbtn('+ Предмет','primary',()=>trItemModal(k))],null,'Пока пусто.');
+  b2.querySelector('h2').className='tr-sub'; box.appendChild(b2);
+  const b3=trListBlock(k,tr,d,own,'Обмен комфорта на очки тренировки',e=>e.t==='comfort',[lbtn('Обменять комфорт','primary',()=>trComfortModal(k))],null,'Обменов не было.');
+  b3.querySelector('h2').className='tr-sub'; box.appendChild(b3);
+  return box;
+}
+/* ---- модальные окна ---- */
+function trFld(m,label,node){m.appendChild(elt('label','l',label)); m.appendChild(node); return node;}
+function trInpT(v){const i=el('input'); i.type='text'; if(v!==undefined) i.value=v; return i;}
+function trSelO(opts,val){const s=el('select','m-sel'); s.style.width='100%'; opts.forEach(([v,t])=>{const o=el('option');o.value=v;o.textContent=t;s.appendChild(o);}); if(val!==undefined) s.value=val; return s;}
+function trModalBase(title,k,build,go){ // go() -> true при успехе
+  openModal((m,close)=>{
+    m.appendChild(elt('h2','rh',title)); const info=elt('p','hint tr-info',''); 
+    const upd=build(m,info); m.appendChild(info);
+    const row=el('div','lrow'); row.appendChild(lbtn('Добавить','primary',()=>{if(go()) close();})); row.appendChild(lbtn('Отмена','',close)); m.appendChild(row);
+    m.addEventListener('input',()=>upd&&upd()); m.addEventListener('change',()=>upd&&upd()); if(upd) upd();
+  });
+}
+const trEffSrc=()=>trEdit?trSrcSel:'training';
+function trLangModal(k){
+  let n,cb,pj,info;
+  trModalBase('Новый язык',k,(m,inf)=>{info=inf; n=trFld(m,'Название',trInpT()); n.maxLength=60;
+    const lb=el('label','l'); cb=el('input'); cb.type='checkbox'; lb.appendChild(cb); lb.appendChild(document.createTextNode(' Родной (первый родной язык бесплатно)')); m.appendChild(lb);
+    pj=trFld(m,'Проектов от ближайшего родного (для не родного)',trInpT('1'));
+    return()=>{const tr=trGet(k), r=trLangAdd(tr,n.value,cb.checked,pj.value,trDerive(tr).stats.int.mod); pj.disabled=cb.checked;
+      info.textContent=r.err||('Цена: '+trPayTxt(r.price,trEffSrc()));};},
+  ()=>trAct(k,tr=>{const r=trLangAdd(tr,n.value,cb.checked,pj.value,trDerive(tr).stats.int.mod); if(r.err){toast(r.err);return false;}
+    return trBuy(k,tr,{t:'lang',n:n.value.trim().slice(0,60),a:cb.checked?1:0,b:cb.checked?0:Math.trunc(+pj.value),fr:0,to:0},r.price);}));
+}
+function trSpellModal(k){
+  let n,c,cb,x,info;
+  trModalBase('Новое заклинание',k,(m,inf)=>{info=inf; n=trFld(m,'Название',trInpT()); n.maxLength=60;
+    c=trFld(m,'Круг (0–9)',trSelO([0,1,2,3,4,5,6,7,8,9].map(v=>[String(v),String(v)]),'0'));
+    const lb=el('label','l'); cb=el('input'); cb.type='checkbox'; lb.appendChild(cb); lb.appendChild(document.createTextNode(' Скидка (книга заклинаний класса, учитель или свиток)')); m.appendChild(lb);
+    x=trFld(m,'Доп. скидка X (вычитается после деления пополам)',trInpT('0'));
+    return()=>{const xv=Math.max(0,Math.trunc(+x.value)||0); info.textContent='Цена: '+trPayTxt(TRP.spell(+c.value,cb.checked,xv),trEffSrc());};},
+  ()=>{const nm=n.value.trim(); if(!nm){toast('Введите название');return false;} const xv=Math.max(0,Math.trunc(+x.value)||0);
+    return trAct(k,tr=>trBuy(k,tr,{t:'spell',n:nm.slice(0,60),a:+c.value,b:cb.checked?1:0,c:xv,fr:0,to:0},TRP.spell(+c.value,cb.checked,xv)));});
+}
+function trUpgModal(k){
+  let sp,n,cb,inc,info;
+  const tr0=trGet(k), spells=tr0.h.filter(e=>e.t==='spell'); if(!spells.length){toast('Сначала добавьте заклинание');return;}
+  trModalBase('Улучшение заклинания',k,(m,inf)=>{info=inf;
+    sp=trFld(m,'Заклинание',trSelO(spells.map(s=>[s.id,s.n+' (круг '+s.a+')'])));
+    n=trFld(m,'Название улучшения',trInpT()); n.maxLength=60;
+    const lb=el('label','l'); cb=el('input'); cb.type='checkbox'; lb.appendChild(cb); lb.appendChild(document.createTextNode(' Метамагия (слотов столько, на сколько растёт круг)')); m.appendChild(lb);
+    inc=trFld(m,'Прирост круга (для метамагии)',trInpT('1'));
+    return()=>{inc.disabled=!cb.checked; const r=trUpgCheck(trGet(k),sp.value,n.value,cb.checked,inc.value); info.textContent=r.err||('Цена: '+trPayTxt(r.price,trEffSrc())+', слотов: '+r.slots);};},
+  ()=>trAct(k,tr=>{const r=trUpgCheck(tr,sp.value,n.value,cb.checked,inc.value); if(r.err){toast(r.err);return false;}
+    return trBuy(k,tr,{t:'upg',ref:sp.value,n:n.value.trim().slice(0,60),a:cb.checked?1:0,b:cb.checked?Math.trunc(+inc.value):0,c:r.slots,fr:0,to:0},r.price);}));
+}
+function trSeedModal(k){
+  let n;
+  trModalBase('Новое семя (−'+TRP.seed+')',k,(m,inf)=>{n=trFld(m,'Название / заметка (необязательно)',trInpT()); n.maxLength=80; inf.textContent='Цена: '+trPayTxt(TRP.seed,trEffSrc());},
+  ()=>trAct(k,tr=>trBuy(k,tr,{t:'seed',n:n.value.trim().slice(0,80),fr:0,to:0},TRP.seed)));
+}
+function trManModal(k){
+  let n,g,z;
+  const tr0=trGet(k);
+  trModalBase('Новый боевой приём (−'+TRP.man+')',k,(m,inf)=>{n=trFld(m,'Название',trInpT()); n.maxLength=80;
+    g=trFld(m,'Оружейная группа',trSelO([['','— не указана —']].concat(tr0.wp.map(w=>[w.n,w.n]))));
+    z=trFld(m,'Примечание (необязательно)',trInpT()); z.maxLength=300; inf.textContent='Цена: '+trPayTxt(TRP.man,trEffSrc());},
+  ()=>{const nm=n.value.trim(); if(!nm){toast('Введите название');return false;}
+    return trAct(k,tr=>trBuy(k,tr,{t:'man',n:nm.slice(0,80),x:g.value,z:z.value.trim().slice(0,300),fr:0,to:0},TRP.man));});
+}
+function trFeatModal(k,kind){ // kind: 'feat' | 'abil'
+  let n,p,s,o,info;
+  trModalBase(kind==='feat'?'Новая черта':'Способность расы / класса',k,(m,inf)=>{info=inf; n=trFld(m,'Название',trInpT()); n.maxLength=80;
+    if(kind==='abil') o=trFld(m,'Откуда способность',trSelO([['0','Раса'],['1','Класс']],'0'));
+    p=trFld(m,'Цена (договаривается с мастером, от 200)',trInpT('200'));
+    s=trFld(m,'Источник (не «тренировка» — бесплатно)',trSelO(TR_SRC.filter(x=>x[0]!=='comfort').map(x=>[x[0],x[1]]),trEffSrc()));
+    return()=>{const pv=Math.trunc(+p.value); info.textContent=Number.isFinite(pv)&&pv>=0?('Спишется: '+(s.value==='training'?pv:0)+' оч.'):'Введите цену числом';};},
+  ()=>{const nm=n.value.trim(), pv=Math.trunc(+p.value); if(!nm){toast('Введите название');return false;}
+    if(!Number.isFinite(pv)||pv<0){toast('Цена — целое число');return false;}
+    if(s.value==='training'&&pv<200&&!trEdit){toast('Цена за тренировку — от 200');return false;}
+    return trAct(k,tr=>trBuy(k,tr,{t:kind,n:nm.slice(0,80),a:kind==='abil'?+o.value:0,fr:0,to:0},pv,s.value));});
+}
+function trProfModal(k){
+  let P,info; const tr0=trGet(k), d0=trDerive(tr0), boxes=[];
+  trModalBase('Профессионализм (−'+TRP.prof+')',k,(m,inf)=>{info=inf;
+    P=trFld(m,'Очки навыков класса (2+ → 1 навык, 4+ → 2, 6+ → 3, 8+ → 4)',trInpT('2'));
+    m.appendChild(elt('label','l','Навыки, которые станут специализированными'));
+    tr0.sk.filter(s=>d0.sk[s.id].tier<2).forEach(s=>{const lb=el('label','tr-chk'); const c=el('input'); c.type='checkbox'; c.value=s.id; boxes.push(c); lb.appendChild(c); lb.appendChild(document.createTextNode(' '+s.n)); m.appendChild(lb);});
+    if(!boxes.length) m.appendChild(elt('p','hint','Нет навыков, которые можно специализировать.'));
+    return()=>{const r=trProfCheck(trGet(k),P.value,boxes.filter(c=>c.checked).map(c=>c.value)); info.textContent=r.err||('Цена: '+trPayTxt(TRP.prof,trEffSrc()));};},
+  ()=>trAct(k,tr=>{const ids=boxes.filter(c=>c.checked).map(c=>c.value), r=trProfCheck(tr,P.value,ids); if(r.err){toast(r.err);return false;}
+    const pid=trNewId(), d=trDerive(tr), left0=d.left, pay=trEffSrc()==='training'?TRP.prof:0;
+    if(pay>left0){toast('Не хватает очков: нужно '+pay+', осталось '+left0);return false;}
+    tr.h.push({id:pid,t:'prof',a:Math.trunc(+P.value),x:ids.join(','),fr:0,to:0,price:pay,src:trEffSrc()});
+    ids.forEach(id=>{let t=d.sk[id].tier; while(t<2){tr.h.push({id:trNewId(),t:'tier',ref:id,fr:t,to:t+1,price:0,src:trEffSrc(),x:'prof:'+pid}); t++;}});}));
+}
+function trItemModal(k){
+  let n,N,info;
+  trModalBase('Квалификация предмета',k,(m,inf)=>{info=inf; n=trFld(m,'Название предмета',trInpT()); n.maxLength=80; N=trFld(m,'Номер предмета N (цена 50 × N)',trInpT('1'));
+    return()=>{const r=trItemCheck(trGet(k),n.value,N.value); info.textContent=r.err||('Цена: '+trPayTxt(r.price,trEffSrc()));};},
+  ()=>trAct(k,tr=>{const r=trItemCheck(tr,n.value,N.value); if(r.err){toast(r.err);return false;}
+    return trBuy(k,tr,{t:'item',n:n.value.trim().slice(0,80),a:Math.trunc(+N.value),fr:0,to:0},r.price);}));
+}
+function trComfortModal(k){
+  let c,info;
+  trModalBase('Обмен комфорта на очки',k,(m,inf)=>{info=inf; c=trFld(m,'Сколько комфорта обменять',trInpT('1'));
+    return()=>{const n=Math.trunc(+c.value), lv=trGet(k).lv; info.textContent=(Number.isFinite(n)&&n>=1)?('Получите: '+TRP.comfort(n,lv)+' очков (комфорт × (уровень '+lv+' + 1) × 5)'):'Введите число от 1';};},
+  ()=>{const n=Math.trunc(+c.value); if(!Number.isFinite(n)||n<1){toast('Введите число от 1');return false;}
+    return trAct(k,tr=>{tr.h.push({id:trNewId(),t:'comfort',a:n,fr:0,to:0,price:TRP.comfort(n,tr.lv),src:'comfort'});});});
 }
 
 /* ---------- календарь: три недели с понедельника, данные в board/main/cal/{ГГГГ-ММ-ДД} ---------- */
