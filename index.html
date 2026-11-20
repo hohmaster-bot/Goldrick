@@ -437,6 +437,7 @@ button.ck-b:hover{background:var(--surface-2)}
 .tr-ht{font-size:13px;font-weight:600}
 .tr-hm{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12px;margin-top:3px}
 .tr-hp{font-weight:800}
+.tr-undo{height:24px!important;padding:0 8px!important;font-size:12px}
 .tr-run{margin-left:auto}
 .tr-extra{max-width:none;margin-top:16px}
 .tr-ta{width:100%;margin:8px 0 0;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:var(--surface-2);color:var(--fg);padding:8px}
@@ -2913,6 +2914,11 @@ function trUnbasics(k,id){trAct(k,tr=>{trRemoveLast(tr,e=>e.t==='basics'&&e.ref=
 function trDelSk(k,id){trAct(k,tr=>{tr.sk=tr.sk.filter(s=>s.id!==id);tr.h=tr.h.filter(e=>!((e.t==='rank'||e.t==='tier')&&e.ref===id));});}
 function trDelW(k,id){trAct(k,tr=>{tr.wp=tr.wp.filter(w=>w.id!==id);tr.wp.forEach(w=>{w.par=w.par.filter(p=>p!==id);});
   tr.h=tr.h.filter(e=>!((e.t==='wrank'||e.t==='basics')&&e.ref===id));});}
+function trUndo(k,id){
+  trAct(k,tr=>{const e=tr.h.find(x=>x.id===id); if(!e) return false;
+    tr.h=tr.h.filter(x=>x.id!==id); if(e.t==='lvl') tr.lv=Math.max(0,tr.lv-1);});
+  toast('Покупка отменена');
+}
 function trReset(k){
   if(!trCanEdit(k)) return;
   delete trains[k]; trEdit=false;
@@ -3102,6 +3108,7 @@ function trHistBlock(k,tr,d,own){
     }else{
       m.appendChild(elt('span','tr-hp',TR_INC[e.t]?'+'+e.price:(trPaid(e)?'−'+trPaid(e):'0')));
       m.appendChild(elt('span','muted',trSrcLabel(e.src)));
+      if(own){const u=lbtn('↩ Отменить','',()=>trUndo(k,e.id)); u.classList.add('tr-undo'); u.title='Отменить эту покупку и вернуть очки'; m.appendChild(u);}
     }
     m.appendChild(elt('span','muted tr-run','осталось '+run)); c.appendChild(m); box.appendChild(c);
   });
