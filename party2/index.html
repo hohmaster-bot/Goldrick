@@ -332,6 +332,15 @@ button.ck-b:hover{background:var(--surface-2)}
 .ltools{display:flex;gap:6px}
 .lp{margin:6px 0 0}
 .lgl{margin:8px 0 0;padding-left:18px;font-size:13px;color:var(--muted)}
+.lxf{margin-top:6px;display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+.lxr{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.lxl{display:inline-flex;gap:6px;align-items:center;font-size:13px}
+.lxs{font-size:12px}
+.lxsel{width:auto;min-width:150px;font-size:13px;padding:5px}
+.lxn{font-weight:600;min-width:200px}
+.lchk .chk{min-width:40px;justify-content:center}
+.lchk .chk.on{background:var(--ok);color:#fff;border-color:var(--ok)}
+.lchk .chk.no.on{background:var(--bad);border-color:var(--bad)}
 .lpre{margin:8px 0 0;padding:8px 10px;border-radius:8px;background:var(--surface-2);font:13px/1.5 var(--font-body);white-space:pre-wrap}
 /* ---------- памятки, вики, заявки ---------- */
 .memo{max-width:640px;margin:22px 0 0;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
@@ -343,6 +352,8 @@ button.ck-b:hover{background:var(--surface-2)}
 .wnav{display:flex;flex-direction:column;gap:8px;flex:0 0 220px;min-width:0}
 .wnav .wl{height:auto;min-height:36px;white-space:normal;text-decoration:none;justify-content:flex-start}
 .wmemo{margin:0;flex:1 1 380px}
+.wh{font-size:15px;font-weight:700;margin:6px 0 0}
+.wnav .wh:not(:first-child){margin-top:12px}
 #reqBody{max-width:760px}
 .rform{display:flex;flex-direction:column;gap:8px;max-width:760px}
 .rform .m-in,.rq .m-in{border:1px solid var(--line);background:var(--surface-2);width:100%}
@@ -563,6 +574,7 @@ button.ck-b:hover{background:var(--surface-2)}
         <li>Восстановить все статы</li>
       </ul>
     </article>
+    <nav class="wnav" id="wikiNav2" aria-label="Полезное"></nav>
   </div>
 </section>
 
@@ -2252,7 +2264,13 @@ function parseLoot(m){
     rps[id]={st:String(r.st||''),by:String(r.by||''),par:ks(r.par),acc:ks(r.acc),rd:numOrNull(r.rd)||1,al:ks(r.al),bye:String(r.bye||''),win:String(r.win||''),
       wn:pcFlags(r.wn),ls:pcFlags(r.ls),pk,lg:Object.entries(r.lg||{}).map(([i,e])=>Object.assign({id:i},e||{})).sort(byId)};
   });
-  return{open:!!L.open,rev:!!L.rev,items:Object.entries(L.items||{}).map(([id,i])=>({id,n:String((i&&i.n)||'')})).sort(byId),
+  const nn=v=>{const n=numOrNull(v); return n===null||n<0?null:Math.floor(n);};
+  const items=Object.entries(L.items||{}).map(([id,i])=>{i=i||{};
+    return{id,n:String(i.n||''),lv:nn(i.lv),bs:nn(i.bs),nd:nn(i.nd),ds:String(i.ds||'').slice(0,600),
+      ck:Object.entries(i.ck||{}).map(([cid,c])=>({id:cid,s:String((c&&c.s)||'').slice(0,60),d:nn(c&&c.d)})).sort(byId)};}).sort(byId);
+  const pc={};
+  Object.keys(L.pc||{}).forEach(id=>{pc[id]={};PCOLORS.forEach(q=>{const o=L.pc[id]&&L.pc[id][q.k]; if(o&&typeof o==='object'){pc[id][q.k]={};Object.keys(o).forEach(c=>{if(o[c]==='v'||o[c]==='x') pc[id][q.k][c]=o[c];});}});});
+  return{open:!!L.open,rev:!!L.rev,items,pc,
     out:pcFlags(L.out),rdy:pcFlags(L.rdy),x:ex,bid,ref,rps};
 }
 let loot=parseLoot(null), lootEdit=false, lootPending=false; const lootShow={}, rpsSig={};
@@ -2272,10 +2290,38 @@ function itemStatus(it,M){
   return{st:eff.length>1?'tie':'win',eff,T,top};
 }
 /* действия */
+const lootDC=(it,c)=>c.d!==null?c.d:15+(it.lv||0);
+const lootNeed=it=>it.ck.length?Math.min(it.ck.length,it.nd!==null?it.nd:it.ck.length):0;
+const lootMark=(it,k,c)=>(((loot.pc[it.id]||{})[k]||{})[c.id])||'';
+const lootOk=(it,k)=>it.ck.filter(c=>lootMark(it,k,c)==='v').length>=lootNeed(it);
+const plOch=n=>{const a=Math.abs(n)%100,b=a%10; return a>10&&a<20?'очков':b===1?'очко':b>1&&b<5?'очка':'очков';};
+function lootLine(i,it){
+  const a=[]; if(it.lv!==null) a.push('ИЛВЛ '+it.lv); if(it.ds.trim()) a.push(it.ds.trim().replace(/[.\s]+$/,''));
+  let s=(i+1)+'. '+(it.n||'(без названия)')+'.'+(a.length?' '+a.join(', ')+'.':'');
+  if(it.bs) s+=' Занимает '+it.bs+' '+plOch(it.bs)+' базы';
+  return s;
+}
+function lootItemSet(id,f,v){
+  if(!isMaster()||!db) return;
+  if(f==='ds'){v=String(v).trim().slice(0,600)||null;}
+  else{const n=numOrNull(String(v).trim()); v=(n===null||n<0)?null:Math.floor(n);}
+  R(LP+'/items/'+id+'/'+f).set(v);
+}
+function lootCkAdd(id){if(isMaster()&&db) R(LP+'/items/'+id+'/ck').push().set({s:TR_SKLIB[0][0]});}
+function lootCkSet(id,cid,f,v){
+  if(!isMaster()||!db) return;
+  if(f==='d'){const n=numOrNull(String(v).trim()); v=(n===null||n<0)?null:Math.floor(n);}
+  R(LP+'/items/'+id+'/ck/'+cid+'/'+f).set(v);
+}
+function lootCkDel(id,cid){if(isMaster()&&db){const u={}; u['items/'+id+'/ck/'+cid]=null; PCOLORS.forEach(q=>{u['pc/'+id+'/'+q.k+'/'+cid]=null;}); R(LP).update(u);}}
+function lootPc(it,k,c,val){
+  if(!db||!loot.rev||!(isMaster()||me.color===k)) return;
+  const cur=lootMark(it,k,c); R(LP+'/pc/'+it.id+'/'+k+'/'+c.id).set(cur===val?null:val);
+}
 function lootAddItem(){if(!isMaster()||!db) return; const key=R(LP+'/items').push().key; focusNext=key; R(LP+'/items/'+key).set({n:''});}
 function lootDelItem(id){
   if(!isMaster()||!db) return;
-  const u={}; u['items/'+id]=null; u['ref/'+id]=null; u['rps/'+id]=null;
+  const u={}; u['items/'+id]=null; u['ref/'+id]=null; u['rps/'+id]=null; u['pc/'+id]=null;
   PCOLORS.forEach(pc=>{u['bid/'+pc.k+'/'+id]=null;});
   R(LP).update(u);
 }
@@ -2423,11 +2469,60 @@ function tieCard(it,idx,s){
   if(g){const lines=g.lg.map(e=>rpsLine(g,e)).filter(Boolean); if(lines.length){const ul=el('ul','lgl'); lines.forEach(t=>ul.appendChild(elt('li','',t))); card.appendChild(ul);}}
   return card;
 }
+function lootAdminBox(it,editing){
+  const box=el('div','lxf');
+  if(!editing){
+    const a=[]; if(it.lv!==null) a.push('ИЛВЛ '+it.lv); if(it.bs) a.push('база '+it.bs);
+    if(it.ds.trim()) a.push(it.ds.trim());
+    if(it.ck.length) a.push('проверки ('+lootNeed(it)+' из '+it.ck.length+'): '+it.ck.map(c=>c.s+' КС '+lootDC(it,c)).join(', '));
+    if(!a.length) return document.createDocumentFragment();
+    box.appendChild(elt('div','muted lxs','Скрыто от игроков: '+a.join(' · '))); return box;
+  }
+  const num=(lab,val,f,ph)=>{const w=el('label','lxl'); w.appendChild(document.createTextNode(lab+' ')); const i=el('input','m-sq'); i.type='text'; i.inputMode='numeric'; i.size=3; i.value=val===null?'':val; if(ph!==undefined) i.placeholder=ph; i.addEventListener('change',()=>lootItemSet(it.id,f,i.value)); w.appendChild(i); return w;};
+  box.appendChild(elt('div','muted lxs','Видно только мастеру, игрокам откроется после вскрытия'));
+  const r1=el('div','lxr'); r1.appendChild(num('ИЛВЛ',it.lv,'lv')); r1.appendChild(num('База',it.bs,'bs')); box.appendChild(r1);
+  const ds=el('input','m-in'); ds.type='text'; ds.value=it.ds; ds.placeholder='Описание от ГМа'; ds.size=28; ds.addEventListener('change',()=>lootItemSet(it.id,'ds',ds.value)); box.appendChild(ds);
+  it.ck.forEach(c=>{
+    const r=el('div','lxr'), sel=el('select','m-in lxsel');
+    const names=TR_SKLIB.map(x=>x[0]); if(c.s&&!names.includes(c.s)) names.push(c.s);
+    names.forEach(n=>{const o=el('option'); o.value=n; o.textContent=n; if(n===c.s) o.selected=true; sel.appendChild(o);});
+    sel.addEventListener('change',()=>lootCkSet(it.id,it.ck.find(x=>x.id===c.id)?c.id:c.id,'s',sel.value)); r.appendChild(sel);
+    const w=el('label','lxl'); w.appendChild(document.createTextNode('КС ')); const i=el('input','m-sq'); i.type='text'; i.inputMode='numeric'; i.size=3; i.value=c.d===null?'':c.d; i.placeholder=String(15+(it.lv||0));
+    i.addEventListener('change',()=>lootCkSet(it.id,c.id,'d',i.value)); w.appendChild(i); r.appendChild(w);
+    const x=el('button','m-b x'); x.type='button'; x.textContent='×'; x.title='Убрать проверку'; x.addEventListener('click',()=>lootCkDel(it.id,c.id)); r.appendChild(x);
+    box.appendChild(r);
+  });
+  const r3=el('div','lxr'); r3.appendChild(lbtn('+ Проверка','',()=>lootCkAdd(it.id)));
+  if(it.ck.length) r3.appendChild(num('Нужно пройти проверок',it.nd,'nd',String(it.ck.length)));
+  box.appendChild(r3);
+  if(it.ck.length) box.appendChild(elt('div','muted lxs','КС пусто = 15 + ИЛВЛ. Нужно пройти проверок: число, пусто = все. Можно менять и после вскрытия. Без навыков предмет попадает в список сразу.'));
+  return box;
+}
+function lootCards(k,wins){
+  const out=[];
+  wins.forEach(([it,i])=>{
+    if(!it.ck.length) return;
+    const card=el('div','lcard lchk'); const h=el('div','lch'); h.appendChild(elt('span','',(i+1)+'. '+(it.n||'(без названия)')));
+    const ok=lootOk(it,k); h.appendChild(elt('span','rbadge '+(ok?'accepted':'open'),ok?'проверки пройдены':'нужно '+lootNeed(it)+' из '+it.ck.length)); card.appendChild(h);
+    const meta=[]; if(it.lv!==null) meta.push('ИЛВЛ '+it.lv); if(it.bs) meta.push('база: '+it.bs);
+    if(meta.length) card.appendChild(elt('p','lp muted',meta.join(' · ')));
+    if(it.ds.trim()) card.appendChild(elt('p','lp',it.ds.trim()));
+    it.ck.forEach(c=>{
+      const r=el('div','lxr'); r.appendChild(elt('span','lxn',c.s+' — КС '+lootDC(it,c)));
+      const m=lootMark(it,k,c);
+      const yes=lbtn('✓','chk'+(m==='v'?' on':''),()=>lootPc(it,k,c,'v')), no=lbtn('✗','chk no'+(m==='x'?' on':''),()=>lootPc(it,k,c,'x'));
+      yes.title='Проверка пройдена'; no.title='Не пройдена'; r.appendChild(yes); r.appendChild(no); card.appendChild(r);
+    });
+    out.push(card);
+  });
+  return out;
+}
 function listBlock(k,M){
   const box=el('div','lcard llist'), head=el('div','lch');
   head.appendChild(elt('span','',isMaster()?'Лут: '+nickOf(k):'Ваш лут'));
-  const lines=[]; let pend=false;
-  loot.items.forEach((it,i)=>{const s=itemStatus(it,M); if(s.st==='tie'&&s.eff.includes(k)) pend=true; else if(s.st==='win'&&s.eff[0]===k) lines.push((i+1)+'. '+(it.n||'(без названия)'));});
+  const lines=[], shown=[], wins=[]; let pend=false;
+  loot.items.forEach((it,i)=>{const s=itemStatus(it,M); if(s.st==='tie'&&s.eff.includes(k)) pend=true; else if(s.st==='win'&&s.eff[0]===k){
+    wins.push([it,i]); if(lootOk(it,k)){lines.push(lootLine(i,it)); shown.push(lootLine(i,it));} else shown.push((i+1)+'. (проверки не пройдены)');}});
   const tools=el('span','ltools');
   if(!pend||isMaster()) tools.appendChild(lbtn(lootShow[k]?'Скрыть':'Показать','',()=>{lootShow[k]=!lootShow[k];renderLoot();}));
   if(!pend||isMaster()) tools.appendChild(lbtn('Копировать','',()=>copyText(lines.join('\n'))));
@@ -2435,9 +2530,10 @@ function listBlock(k,M){
   if(pend) box.appendChild(elt('p','lp muted',isMaster()?'Есть нерешённые спорные позиции — список неполный.':'Есть спорные позиции. Список появится, когда они будут решены.'));
   if((!pend||isMaster())&&lootShow[k]){
     if(!lines.length) box.appendChild(elt('p','lp muted','Пока ничего не досталось.'));
-    else{const pre=el('pre','lpre'); pre.textContent=lines.join('\n'); box.appendChild(pre);}
+    else{const pre=el('pre','lpre'); pre.textContent=shown.join('\n'); box.appendChild(pre);}
   }
-  return box;
+  const cards=lootCards(k,wins); if(!cards.length) return box;
+  const wrap=el('div'); wrap.appendChild(box); cards.forEach(c=>wrap.appendChild(c)); return wrap;
 }
 function renderLoot(){
   lootPending=false; hideTip();
@@ -2477,6 +2573,7 @@ function renderLoot(){
     const nm=el('td','nm');
     if(editing){const inp=el('input','m-in'); inp.type='text'; inp.value=it.n; inp.placeholder='Название предмета'; inp.dataset.fid=it.id; inp.size=28; inp.addEventListener('change',()=>lootRename(it.id,inp.value)); nm.appendChild(inp);}
     else nm.textContent=it.n||'—';
+    if(master) nm.appendChild(lootAdminBox(it,editing));
     tr.appendChild(nm);
     if(loot.open) M.forEach(k=>{
       const td=el('td','bc'+(k===own?' mine':''));
@@ -2552,16 +2649,36 @@ document.addEventListener('pointerup',()=>setTimeout(()=>{if(lootPending&&tab===
 /* ---------- вики ---------- */
 // ссылки левого меню: {t:'Название кнопки',u:'https://адрес'}
 const WIKI_LINKS=[
+  {h:'Правила'},
+  {t:'Классы',u:'https://drive.google.com/drive/folders/0BzbGRjLqaUncc1hWdUVQSlRCUHc?resourcekey=0-3GLKgWqjYIclpAolA85HlA'},
   {t:'Корневая папка игры',u:'https://drive.google.com/drive/folders/12DOX2A7N5YCd9aBDQ1GnJmIGCWJ8UPXq?hl=ru'},
   {t:'Травмы',u:'https://docs.google.com/document/d/1l4KyVopdcucCTNUmnr8mIlofrqEBbxVwr96YC7L32Rc/edit?tab=t.0#heading=h.tgd1a7gxjltk'},
   {t:'Боевые правила',u:'https://docs.google.com/document/d/13IL-AgN3BXbVmu9Q2hTuVMk_ZNSY4KP5vp5E6tUqFN8/edit?tab=t.0#heading=h.j82dnqxthi3o'},
   {t:'Тренировки',u:'https://docs.google.com/document/d/1ua_JCANFS0J3xtfutMCXfqmBt5r7iQEDf5r3dVa6f8U/edit?tab=t.0'},
   {t:'Арканика и откат',u:'https://docs.google.com/document/d/1MJ0k3IF3H3-9CmK_ddL04GrY4nsgDm6CU7sr1pQKsM8/edit?tab=t.0'}
 ];
+const WIKI_LINKS2=[
+  {h:'Полезное:'},
+  {t:'Генератор критов',u:'http://pfcompanion.com/lw/layingwaste-web.html'},
+  {h:'Заклинания'},
+  {t:'Волшебник и Колдун',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-sorcerer-and-wizard/'},
+  {t:'Жрец и Оракул',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-cleric/'},
+  {t:'Метаморф и Друид',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-druid/'},
+  {t:'Псион',u:'https://www.d20pfsrd.com/alternative-rule-systems/3rd-party-rules-systems/psionics-unleashed/power-lists/power-list-psion-wilder/'},
+  {t:'Доп школы псионов',u:'https://www.d20pfsrd.com/alternative-rule-systems/3rd-party-rules-systems/psionics-unleashed/power-lists/power-list-psion-discipline-powers/'},
+  {t:'Бард',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-bard/'},
+  {t:'Воин-маг и Магус',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/magus-spell-list/'},
+  {t:'Призыватель',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-summoner/'},
+  {t:'Инквизитор',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-inquisitor/'},
+  {t:'Паладин',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-paladin/'},
+  {t:'Рейнджер',u:'https://www.d20pfsrd.com/magic/spell-lists-and-domains/spell-lists-ranger/'}
+];
 function renderWiki(){
   const nav=$('#wikiNav'); if(!nav) return; nav.innerHTML='';
   if(!WIKI_LINKS.length){nav.appendChild(elt('p','muted','Ссылки пока не добавлены.'));return;}
-  WIKI_LINKS.forEach(l=>{const a=el('a','btn wl'); a.textContent=l.t; a.href=l.u; a.target='_blank'; a.rel='noopener noreferrer'; nav.appendChild(a);});
+  const mk=(box,l)=>{if(l.h){box.appendChild(elt('div','wh',l.h));return;} const a=el('a','btn wl'); a.textContent=l.t; a.href=l.u; a.target='_blank'; a.rel='noopener noreferrer'; box.appendChild(a);};
+  WIKI_LINKS.forEach(l=>mk(nav,l));
+  const n2=$('#wikiNav2'); if(n2){n2.innerHTML=''; WIKI_LINKS2.forEach(l=>mk(n2,l));}
 }
 /* ---------- заявки: board/main/req/{id} ---------- */
 const RP='board/main/req', REQ_ST={open:'На рассмотрении',accepted:'Принято',denied:'Отказано',closed:'Закрыта'};
