@@ -2260,13 +2260,9 @@ function parseLoot(m){
     rps[id]={st:String(r.st||''),by:String(r.by||''),par:ks(r.par),acc:ks(r.acc),rd:numOrNull(r.rd)||1,al:ks(r.al),bye:String(r.bye||''),win:String(r.win||''),
       wn:pcFlags(r.wn),ls:pcFlags(r.ls),pk,lg:Object.entries(r.lg||{}).map(([i,e])=>Object.assign({id:i},e||{})).sort(byId)};
   });
-  const nn=v=>{const n=numOrNull(v); return n===null||n<0?null:Math.floor(n);};
-  const items=Object.entries(L.items||{}).map(([id,i])=>{i=i||{};
-    return{id,n:String(i.n||''),lv:nn(i.lv),bs:nn(i.bs),nd:nn(i.nd),ds:String(i.ds||'').slice(0,600),
-      ck:Object.entries(i.ck||{}).map(([cid,c])=>({id:cid,s:String((c&&c.s)||'').slice(0,60),d:nn(c&&c.d)})).sort(byId)};}).sort(byId);
-  const pc={};
-  Object.keys(L.pc||{}).forEach(id=>{pc[id]={};PCOLORS.forEach(q=>{const o=L.pc[id]&&L.pc[id][q.k]; if(o&&typeof o==='object'){pc[id][q.k]={};Object.keys(o).forEach(c=>{if(o[c]==='v'||o[c]==='x') pc[id][q.k][c]=o[c];});}});});
-  return{open:!!L.open,rev:!!L.rev,items,pc,
+  const items=Object.entries(L.items||{}).map(([id,i])=>{i=i||{}; const n=numOrNull(i.lv);
+    return{id,n:String(i.n||''),lv:(n===null||n<0)?null:Math.floor(n),cs:!!i.cs};}).sort(byId);
+  return{open:!!L.open,rev:!!L.rev,items,
     out:pcFlags(L.out),rdy:pcFlags(L.rdy),x:ex,bid,ref,rps};
 }
 let loot=parseLoot(null), lootEdit=false, lootPending=false; const lootShow={}, rpsSig={};
@@ -2286,38 +2282,17 @@ function itemStatus(it,M){
   return{st:eff.length>1?'tie':'win',eff,T,top};
 }
 /* действия */
-const lootDC=(it,c)=>c.d!==null?c.d:15+(it.lv||0);
-const lootNeed=it=>it.ck.length?Math.min(it.ck.length,it.nd!==null?it.nd:it.ck.length):0;
-const lootMark=(it,k,c)=>(((loot.pc[it.id]||{})[k]||{})[c.id])||'';
-const lootOk=(it,k)=>it.ck.filter(c=>lootMark(it,k,c)==='v').length>=lootNeed(it);
-const plOch=n=>{const a=Math.abs(n)%100,b=a%10; return a>10&&a<20?'очков':b===1?'очко':b>1&&b<5?'очка':'очков';};
-function lootLine(i,it){
-  const a=[]; if(it.lv!==null) a.push('ИЛВЛ '+it.lv); if(it.ds.trim()) a.push(it.ds.trim().replace(/[.\s]+$/,''));
-  let s=(i+1)+'. '+(it.n||'(без названия)')+'.'+(a.length?' '+a.join(', ')+'.':'');
-  if(it.bs) s+=' Занимает '+it.bs+' '+plOch(it.bs)+' базы';
-  return s;
-}
+function lootLine(i,it){return (i+1)+'. '+(it.n||'(без названия)')+(it.lv!==null?'. ИЛВЛ '+it.lv:'');}
 function lootItemSet(id,f,v){
   if(!isMaster()||!db) return;
-  if(f==='ds'){v=String(v).trim().slice(0,600)||null;}
+  if(f==='cs') v=v?true:null;
   else{const n=numOrNull(String(v).trim()); v=(n===null||n<0)?null:Math.floor(n);}
   R(LP+'/items/'+id+'/'+f).set(v);
-}
-function lootCkAdd(id){if(isMaster()&&db) R(LP+'/items/'+id+'/ck').push().set({s:TR_SKLIB[0][0]});}
-function lootCkSet(id,cid,f,v){
-  if(!isMaster()||!db) return;
-  if(f==='d'){const n=numOrNull(String(v).trim()); v=(n===null||n<0)?null:Math.floor(n);}
-  R(LP+'/items/'+id+'/ck/'+cid+'/'+f).set(v);
-}
-function lootCkDel(id,cid){if(isMaster()&&db){const u={}; u['items/'+id+'/ck/'+cid]=null; PCOLORS.forEach(q=>{u['pc/'+id+'/'+q.k+'/'+cid]=null;}); R(LP).update(u);}}
-function lootPc(it,k,c,val){
-  if(!db||!loot.rev||!(isMaster()||me.color===k)) return;
-  const cur=lootMark(it,k,c); R(LP+'/pc/'+it.id+'/'+k+'/'+c.id).set(cur===val?null:val);
 }
 function lootAddItem(){if(!isMaster()||!db) return; const key=R(LP+'/items').push().key; focusNext=key; R(LP+'/items/'+key).set({n:''});}
 function lootDelItem(id){
   if(!isMaster()||!db) return;
-  const u={}; u['items/'+id]=null; u['ref/'+id]=null; u['rps/'+id]=null; u['pc/'+id]=null;
+  const u={}; u['items/'+id]=null; u['ref/'+id]=null; u['rps/'+id]=null;
   PCOLORS.forEach(pc=>{u['bid/'+pc.k+'/'+id]=null;});
   R(LP).update(u);
 }
@@ -2466,59 +2441,22 @@ function tieCard(it,idx,s){
   return card;
 }
 function lootAdminBox(it,editing){
-  const box=el('div','lxf');
   if(!editing){
-    const a=[]; if(it.lv!==null) a.push('ИЛВЛ '+it.lv); if(it.bs) a.push('база '+it.bs);
-    if(it.ds.trim()) a.push(it.ds.trim());
-    if(it.ck.length) a.push('проверки ('+lootNeed(it)+' из '+it.ck.length+'): '+it.ck.map(c=>c.s+' КС '+lootDC(it,c)).join(', '));
+    const a=[]; if(it.lv!==null) a.push('ИЛВЛ '+it.lv); if(it.cs) a.push('☠ проклята');
     if(!a.length) return document.createDocumentFragment();
-    box.appendChild(elt('div','muted lxs','Скрыто от игроков: '+a.join(' · '))); return box;
+    return elt('div','muted lxs','Скрыто от игроков: '+a.join(' · '));
   }
-  const num=(lab,val,f,ph)=>{const w=el('label','lxl'); w.appendChild(document.createTextNode(lab+' ')); const i=el('input','m-sq'); i.type='text'; i.inputMode='numeric'; i.size=3; i.value=val===null?'':val; if(ph!==undefined) i.placeholder=ph; i.addEventListener('change',()=>lootItemSet(it.id,f,i.value)); w.appendChild(i); return w;};
-  box.appendChild(elt('div','muted lxs','Видно только мастеру, игрокам откроется после вскрытия'));
-  const r1=el('div','lxr'); r1.appendChild(num('ИЛВЛ',it.lv,'lv')); r1.appendChild(num('База',it.bs,'bs')); box.appendChild(r1);
-  const ds=el('input','m-in'); ds.type='text'; ds.value=it.ds; ds.placeholder='Описание от ГМа'; ds.size=28; ds.addEventListener('change',()=>lootItemSet(it.id,'ds',ds.value)); box.appendChild(ds);
-  it.ck.forEach(c=>{
-    const r=el('div','lxr'), sel=el('select','m-in lxsel');
-    const names=TR_SKLIB.map(x=>x[0]); if(c.s&&!names.includes(c.s)) names.push(c.s);
-    names.forEach(n=>{const o=el('option'); o.value=n; o.textContent=n; if(n===c.s) o.selected=true; sel.appendChild(o);});
-    sel.addEventListener('change',()=>lootCkSet(it.id,it.ck.find(x=>x.id===c.id)?c.id:c.id,'s',sel.value)); r.appendChild(sel);
-    const w=el('label','lxl'); w.appendChild(document.createTextNode('КС ')); const i=el('input','m-sq'); i.type='text'; i.inputMode='numeric'; i.size=3; i.value=c.d===null?'':c.d; i.placeholder=String(15+(it.lv||0));
-    i.addEventListener('change',()=>lootCkSet(it.id,c.id,'d',i.value)); w.appendChild(i); r.appendChild(w);
-    const x=el('button','m-b x'); x.type='button'; x.textContent='×'; x.title='Убрать проверку'; x.addEventListener('click',()=>lootCkDel(it.id,c.id)); r.appendChild(x);
-    box.appendChild(r);
-  });
-  const r3=el('div','lxr'); r3.appendChild(lbtn('+ Проверка','',()=>lootCkAdd(it.id)));
-  if(it.ck.length) r3.appendChild(num('Нужно пройти проверок',it.nd,'nd',String(it.ck.length)));
-  box.appendChild(r3);
-  if(it.ck.length) box.appendChild(elt('div','muted lxs','КС пусто = 15 + ИЛВЛ. Нужно пройти проверок: число, пусто = все. Можно менять и после вскрытия. Без навыков предмет попадает в список сразу.'));
-  return box;
-}
-function lootCards(k,wins){
-  const out=[];
-  wins.forEach(([it,i])=>{
-    if(!it.ck.length) return;
-    const card=el('div','lcard lchk'); const h=el('div','lch'); h.appendChild(elt('span','',(i+1)+'. '+(it.n||'(без названия)')));
-    const ok=lootOk(it,k); h.appendChild(elt('span','rbadge '+(ok?'accepted':'open'),ok?'проверки пройдены':'нужно '+lootNeed(it)+' из '+it.ck.length)); card.appendChild(h);
-    const meta=[]; if(it.lv!==null) meta.push('ИЛВЛ '+it.lv); if(it.bs) meta.push('база: '+it.bs);
-    if(meta.length) card.appendChild(elt('p','lp muted',meta.join(' · ')));
-    if(it.ds.trim()) card.appendChild(elt('p','lp',it.ds.trim()));
-    it.ck.forEach(c=>{
-      const r=el('div','lxr'); r.appendChild(elt('span','lxn',c.s+' — КС '+lootDC(it,c)));
-      const m=lootMark(it,k,c);
-      const yes=lbtn('✓','chk'+(m==='v'?' on':''),()=>lootPc(it,k,c,'v')), no=lbtn('✗','chk no'+(m==='x'?' on':''),()=>lootPc(it,k,c,'x'));
-      yes.title='Проверка пройдена'; no.title='Не пройдена'; r.appendChild(yes); r.appendChild(no); card.appendChild(r);
-    });
-    out.push(card);
-  });
-  return out;
+  const box=el('div','lxf'), r=el('div','lxr');
+  const w=el('label','lxl'); w.appendChild(document.createTextNode('ИЛВЛ ')); const i=el('input','m-sq'); i.type='text'; i.inputMode='numeric'; i.size=3; i.value=it.lv===null?'':it.lv;
+  i.addEventListener('change',()=>lootItemSet(it.id,'lv',i.value)); w.appendChild(i); r.appendChild(w);
+  const c=el('button','m-b'+(it.cs?' on':'')); c.type='button'; c.textContent=it.cs?'☠ проклята':'+ проклятие'; c.title='Видно только мастеру'; c.addEventListener('click',()=>lootItemSet(it.id,'cs',!it.cs)); r.appendChild(c);
+  box.appendChild(r); box.appendChild(elt('div','muted lxs','Видно только мастеру. ИЛВЛ игрок увидит у своей вещи после вскрытия.')); return box;
 }
 function listBlock(k,M){
   const box=el('div','lcard llist'), head=el('div','lch');
   head.appendChild(elt('span','',isMaster()?'Лут: '+nickOf(k):'Ваш лут'));
-  const lines=[], shown=[], wins=[]; let pend=false;
-  loot.items.forEach((it,i)=>{const s=itemStatus(it,M); if(s.st==='tie'&&s.eff.includes(k)) pend=true; else if(s.st==='win'&&s.eff[0]===k){
-    wins.push([it,i]); if(lootOk(it,k)){lines.push(lootLine(i,it)); shown.push(lootLine(i,it));} else shown.push((i+1)+'. (проверки не пройдены)');}});
+  const lines=[]; let pend=false;
+  loot.items.forEach((it,i)=>{const s=itemStatus(it,M); if(s.st==='tie'&&s.eff.includes(k)) pend=true; else if(s.st==='win'&&s.eff[0]===k) lines.push(lootLine(i,it));});
   const tools=el('span','ltools');
   if(!pend||isMaster()) tools.appendChild(lbtn(lootShow[k]?'Скрыть':'Показать','',()=>{lootShow[k]=!lootShow[k];renderLoot();}));
   if(!pend||isMaster()) tools.appendChild(lbtn('Копировать','',()=>copyText(lines.join('\n'))));
@@ -2526,10 +2464,9 @@ function listBlock(k,M){
   if(pend) box.appendChild(elt('p','lp muted',isMaster()?'Есть нерешённые спорные позиции — список неполный.':'Есть спорные позиции. Список появится, когда они будут решены.'));
   if((!pend||isMaster())&&lootShow[k]){
     if(!lines.length) box.appendChild(elt('p','lp muted','Пока ничего не досталось.'));
-    else{const pre=el('pre','lpre'); pre.textContent=shown.join('\n'); box.appendChild(pre);}
+    else{const pre=el('pre','lpre'); pre.textContent=lines.join('\n'); box.appendChild(pre);}
   }
-  const cards=lootCards(k,wins); if(!cards.length) return box;
-  const wrap=el('div'); wrap.appendChild(box); cards.forEach(c=>wrap.appendChild(c)); return wrap;
+  return box;
 }
 function renderLoot(){
   lootPending=false; hideTip();
